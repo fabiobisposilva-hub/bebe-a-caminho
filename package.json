@@ -1,0 +1,17 @@
+{
+  "name": "bebe-a-caminho",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BeBê a CaMinHo — o diário da Maria (PWA + Supabase + Netlify)",
+  "scripts": {
+    "test": "node tests/smoke.js && node tests/smoke-datas.js",
+    "test:rapido": "node tests/smoke-datas.js",
+    "mensagens": "python3 scripts/mensagens_build.py scripts/dados/mensagens-base.json app/mensagens.json",
+    "servir": "npx --yes serve app -l 5173"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.0.0",
+    "jsdom": "24.1.3",
+    "pdfjs-dist": "3.11.174"
+  }
+}

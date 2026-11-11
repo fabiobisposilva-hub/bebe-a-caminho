@@ -1,0 +1,4 @@
+# O Netlify publica a pasta app/ como está. Não há build.
+[build]
+  publish = "app"
+  command = ""

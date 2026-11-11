@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.zip
+segredos*.txt
+tests/fixtures/privado/*
+!tests/fixtures/privado/LEIA-ME.md
+.DS_Store
+Thumbs.db

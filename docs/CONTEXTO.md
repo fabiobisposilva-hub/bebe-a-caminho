@@ -26,13 +26,15 @@
 
 ## Decisões tomadas (não desfazer sem o Fabio pedir)
 
-- Hospedagem e banco **grátis** (Netlify + Supabase); o app não depende do Claude para funcionar.
+- Hospedagem e banco **grátis** (Cloudflare Pages + Supabase); o app não depende do Claude para funcionar.
 - No rodapé: "Desenvolvido por Fabio Bispo" e a data de criação.
 - Removida a opção "Pelos arquivos" na escolha de fotos.
 - **Sem** data por cima das miniaturas dos álbuns (o Fabio não gostou); a data aparece ao abrir a foto.
 - **Sem** o ✕ no canto da foto aberta; o Fechar fica embaixo, acima do selo do Netlify.
 - O texto não fala mais em "Google Drive" (era da versão antiga, dentro do Claude).
-- Selo "Powered by Netlify": o Fabio pode desligar em Project configuration → General → Powered by Netlify badge.
+- **Pré-natal desligado** (11/2026), para a versão de teste em família e a comercial: `const PRENATAL = false` no index.html. Os registros antigos continuam no banco.
+- **Capa do álbum** escolhida pela família ("Escolher capa" dentro do álbum); sem escolha, é a primeira foto.
+- **Hospedagem trocada do Netlify para o Cloudflare Pages** (11/2026): no Netlify grátis cada publicação gastava créditos e eles acabaram. Endereço novo: https://bebe-a-caminho.pages.dev. Ideia: registrar um domínio próprio (.com.br) antes de vender, para o endereço nunca mais mudar.
 
 ## Problemas que já apareceram (para não voltarem)
 
@@ -51,6 +53,9 @@
 
 ## Em aberto ou não testado em celular de verdade
 
+- **Rodar o SQL 05** (`supabase/sql/05-capa-album.sql`) no Supabase, para a capa do álbum funcionar.
+- Revisão de QA, celular e publicação em `docs/REVISAO-QA.md`, com o roteiro de teste em família e o que falta para vender.
+
 - "Compartilhar → BeBê a CaMinHo" só aparece se o app for instalado pelo **Chrome**. Pode ser preciso remover e reinstalar o ícone.
   Não foi testado num Samsung de verdade.
 - **Bom dia:** é preciso confirmar com o Fabio se ele terminou a configuração:
@@ -62,6 +67,6 @@
 
 ## Como publicar uma versão nova
 
-- **Com o repositório ligado ao Netlify:** basta juntar (merge) na branch `main`. O Netlify publica sozinho em cerca de 1 minuto.
-- **Sem ligar:** compacte o **conteúdo** da pasta `app/` em .zip e arraste o arquivo no site **bb-a-caminho**, em **Deploys**, no Netlify.
+- Basta juntar (merge) na branch `main`. O Cloudflare Pages publica sozinho em cerca de 1 minuto (veja em **Workers & Pages → bebe-a-caminho → Deployments**).
+- Para voltar uma versão: em **Deployments**, nos três pontinhos de uma publicação antiga → **Rollback to this deployment**.
 - **Depois de publicar:** no celular, puxe a tela para baixo ou feche e abra o app.

@@ -535,7 +535,7 @@ a.btn{display:block;text-align:center;text-decoration:none}
   </form>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
 <script>
 (() => {
 /* ---------- Servidor (Supabase): a chave publishable é pública por natureza;
@@ -720,6 +720,8 @@ function headerAge(){
   return "Toque em Ajustes para colocar a data provável do parto";
 }
 
+/* Pré-natal desligado nesta versão (pedido do Fabio, 11/2026). Os registros antigos ficam guardados; para religar, troque para true. */
+const PRENATAL = false;
 const ICONS = {"tl": "<path d='M3 5.6c2.6-1.2 5.6-1 9 1.1 3.4-2.1 6.4-2.3 9-1.1v13c-2.6-1.2-5.6-1-9 1.1-3.4-2.1-6.4-2.3-9-1.1z'/><path d='M12 6.7v13'/><path d='M7.4 9.6c.5-.8 1.8-.6 1.8.4 0 .9-1.1 1.5-1.8 2.1-.7-.6-1.8-1.2-1.8-2.1 0-1 1.3-1.2 1.8-.4z'/><path d='M14.8 10h3.4M14.8 13h3.4M14.8 16h2.2'/>", "pn": "<circle cx='10.2' cy='4.6' r='2.1'/><path d='M9.4 8.2c-1.6 1.6-2.2 4.4-1.4 6.8l-.4 6'/><path d='M10.8 8.3c1.1 1.3 1.6 2.4 1.9 3.6 2.5.4 4 2.6 3.3 4.7-.6 1.7-2.4 2.5-4.4 2.2l.2 2.2'/><path d='M14.2 15.8c-.4-.6-1.3-.4-1.3.3 0 .6.8 1 1.3 1.5.5-.5 1.3-.9 1.3-1.5 0-.7-.9-.9-1.3-.3z'/>", "ft": "<rect x='3' y='5' width='18' height='14' rx='2.6'/><circle cx='8.8' cy='10' r='1.7'/><path d='M3.6 17.4l5.2-4.6 3.6 3.1 3-2.5 5.1 4.2'/>", "rt": "<path d='M10.4 3.2h3.2l.6 2.6h-4.4z'/><rect x='8.6' y='5.8' width='6.8' height='2.4' rx='.8'/><path d='M9.4 8.2h5.2c.9 1.3 1.3 2.6 1.3 4.2v6a2.6 2.6 0 0 1-2.6 2.6h-2.6a2.6 2.6 0 0 1-2.6-2.6v-6c0-1.6.4-2.9 1.3-4.2z'/><path d='M10.8 12.6h2.4M10.8 15.6h2.4'/>", "ms": "<path d='M12 3.4l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.7l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z'/>", "gr": "<path d='M4 4v16h16'/><path d='M7.5 15l3.6-3.8 3 2.8 4.9-5.6'/><path d='M15.6 8.4h3.4v3.4'/>", "vc": "<path d='M6.6 14.6l8-8 2.8 2.8-8 8z'/><path d='M16 8l3-3M17.6 3.6l2.8 2.8M7.9 16.1L4.2 19.8M9.6 11.6l1.3 1.3M11.6 9.6l1.3 1.3'/>", "cd": "<rect x='5' y='4.6' width='14' height='16.4' rx='2.4'/><path d='M9 4.6V3.4h6v1.2'/><path d='M12 9.6v5.4M9.3 12.3h5.4'/>", "gd": "<path d='M9.2 17.6h5.6M10.2 20.6h3.6'/><path d='M12 3.2a6 6 0 0 0-3.6 10.8c.7.6 1 1.3 1 2.2v1.4h5.2v-1.4c0-.9.3-1.6 1-2.2A6 6 0 0 0 12 3.2z'/>", "sun": "<path d='M3 18.6h18'/><path d='M7.2 18.6a4.8 4.8 0 0 1 9.6 0'/><path d='M12 8.6v2.2M5.6 11.6l1.6 1.6M18.4 11.6l-1.6 1.6M3.6 15.4h2.2M18.2 15.4h2.2'/><path d='M9.6 21.4h4.8'/>"};
 function iconSvg(k){
   const t = document.createElement("template");
@@ -745,8 +747,8 @@ function render(){
   /* visitante: só Diário e Álbuns, sem Ajustes */
   const visit = mode === "visit";
   for (const t of ["rt","ms","gr","vc","cd","gd"]) $("tab-"+t).hidden = visit;
-  $("tab-pn").hidden = mode !== "drive";
-  if (tab === "pn" && mode !== "drive") tab = "tl";
+  $("tab-pn").hidden = mode !== "drive" || !PRENATAL;
+  if (tab === "pn" && (mode !== "drive" || !PRENATAL)) tab = "tl";
   iconTabs();
   $("tab-ft").hidden = !visit; $("tab-ft").querySelector("span").textContent = "Álbuns";
   document.body.classList.toggle("visit", visit);
@@ -1049,7 +1051,7 @@ function renderTimeline(){
     const ag = agendaItems(30);
     if (ag.length) v.append(el("div",{class:"notice"},
       el("div",{class:"row", style:"justify-content:space-between"}, el("strong",{text:"Próximos 30 dias"}),
-        el("button",{class:"mini", type:"button", text:"Pré-natal", onclick:()=>{ tab = "pn"; render(); window.scrollTo(0,0); }})),
+        PRENATAL ? el("button",{class:"mini", type:"button", text:"Pré-natal", onclick:()=>{ tab = "pn"; render(); window.scrollTo(0,0); }}) : null),
       el("div",{class:"grp", style:"margin:0"}, ag.slice(0, 6).map(x=>el("div",{class:"it"},
         el("div",{class:"l"}, el("b",{text:x.title}), el("small",{text: short(x.d) + (x.sub ? " · " + x.sub : "")})),
         el("div",{class:"st"}, el("button",{class:"mini", type:"button", text:"🔔 Lembrar", onclick:()=>remind(x.ev)})))))));
@@ -2496,7 +2498,7 @@ function privacyNodes(){
     H("Quem vê"),
     P("Cada família só enxerga os próprios dados. Responsáveis veem e editam tudo da família. Visitantes só entram com convite e autorização dos responsáveis, e veem apenas as postagens marcadas para visitantes e os álbuns. A Rotina e os registros de saúde não aparecem para visitantes."),
     H("Onde ficam"),
-    P("Em servidores do Supabase (banco de dados e fotos) e o site no Netlify, com conexão protegida (HTTPS) e regras de acesso no próprio banco. Esses serviços atuam como operadores e podem armazenar dados fora do Brasil, conforme as garantias previstas na LGPD."),
+    P("Em servidores do Supabase (banco de dados e fotos) e o site no Cloudflare Pages, com conexão protegida (HTTPS) e regras de acesso no próprio banco. Esses serviços atuam como operadores e podem armazenar dados fora do Brasil, conforme as garantias previstas na LGPD."),
     H("Seus direitos"),
     P("Você pode pedir a qualquer momento: acesso aos seus dados, correção, exclusão da conta e dos dados, informação sobre com quem são compartilhados e revogação do consentimento (LGPD, art. 18). Escreva para " + PRIV_CONTATO + ". Responsáveis também podem apagar registros e fotos pelo próprio app, e retirar o acesso de visitantes em Ajustes."),
     H("Por quanto tempo"),
@@ -2718,7 +2720,7 @@ async function loadAlbums(){
   const al = await q(sb.from("albuns").select("*").eq("familia_id", famId).order("criado_em", {ascending:false}));
   const ids = al.map(a=>a.id);
   const fs = ids.length ? await q(sb.from("album_fotos").select("*").in("album_id", ids).order("data").order("criado_em").limit(20000)) : [];
-  albums = al.map(a=>({id:a.id, nome:a.nome, criado:a.criado_em||"", u:a.autor||"", fotos:[], datas:{}, rows:{}}));
+  albums = al.map(a=>({id:a.id, nome:a.nome, criado:a.criado_em||"", u:a.autor||"", capa:a.capa_path||"", fotos:[], datas:{}, rows:{}}));
   const by = Object.fromEntries(albums.map(a=>[a.id, a]));
   for (const f of fs){ const a = by[f.album_id]; if (!a) continue; a.fotos.push(f.foto_path); if (f.data) a.datas[f.foto_path] = f.data; a.rows[f.foto_path] = f.id; }
   albLoaded = true; albErr = "";
@@ -2735,7 +2737,7 @@ function renderPhotos(){
   }
   const a = albOpen ? albums.find(x=>x.id === albOpen) : null;
   if (!a){
-    albOpen = null;
+    albOpen = null; albCoverPick = null;
     v.append(el("div",{class:"daynav"}, el("button",{class:"mini", type:"button", text:"‹ Diário", onclick:()=>{ tab = "tl"; render(); }}), el("span")));
     v.append(el("div",{class:"sec"}, el("h2",{text:"Álbuns de fotos"}),
       visit ? null : el("button",{class:"mini", type:"button", text:"+ Novo álbum", onclick:()=>openAlbumDlg("new")}),
@@ -2748,7 +2750,7 @@ function renderPhotos(){
     const g = el("div",{class:"albgrid"});
     for (const x of albums){
       g.append(el("button",{class:"albcard", type:"button", onclick:()=>{ albOpen = x.id; render(); window.scrollTo(0,0); }},
-        x.fotos[0] ? el("div",{class:"ph", "data-img":x.fotos[0], text:"…"}) : el("div",{class:"ph", text:"Sem fotos"}),
+        x.fotos[0] ? el("div",{class:"ph", "data-img":albCover(x), text:"…"}) : el("div",{class:"ph", text:"Sem fotos"}),
         el("div",{class:"albmeta"}, el("b",{text:x.nome}), el("small",{text:x.fotos.length+(x.fotos.length===1?" foto":" fotos")+(x.criado?" · "+short(x.criado.slice(0,10)):"")}))));
     }
     v.append(g); observeImages(); return;
@@ -2759,13 +2761,18 @@ function renderPhotos(){
   v.append(el("div",{class:"sec", style:"margin-top:6px"}, el("h2",{text:a.nome}),
     el("p",{text:a.fotos.length+(a.fotos.length===1?" foto":" fotos")+(byLine(a.u)?" · criado "+byLine(a.u):"")})));
   if (!visit){
-    v.append(albDelAsk === a.id
+    v.append(albCoverPick === a.id
+      ? el("div",{class:"notice"},
+          el("p",{}, el("strong",{text:"Escolha a capa: "}), "toque na foto que vai aparecer na frente do álbum."),
+          el("div",{class:"row"}, el("button",{class:"btn ghost", type:"button", text:"Cancelar", onclick:()=>{ albCoverPick = null; render(); }})))
+      : albDelAsk === a.id
       ? el("div",{class:"notice rose"},
           el("p",{}, el("strong",{text:"Apagar o álbum “" + a.nome + "”" + (a.fotos.length ? " e as " + a.fotos.length + (a.fotos.length === 1 ? " foto" : " fotos") : "") + "? "}), "Não dá para desfazer."),
           el("div",{class:"row"},
             el("button",{class:"btn rose", type:"button", text:"Sim, apagar", onclick:()=>deleteAlbum(a)}),
             el("button",{class:"btn ghost", type:"button", text:"Não", onclick:()=>{ albDelAsk = null; render(); }})))
       : el("div",{class:"row", style:"margin:-4px 0 10px;gap:16px"},
+          a.fotos.length ? el("button",{class:"del", type:"button", text:"Escolher capa", onclick:()=>{ albCoverPick = a.id; render(); }}) : null,
           a.fotos.length ? el("button",{class:"del", type:"button", text:"Mudar datas das fotos", onclick:()=>openAlbumDates(a)}) : null,
           el("button",{class:"del", type:"button", text:"Apagar álbum", onclick:()=>{ albDelAsk = a.id; render(); }})));
   }
@@ -2782,7 +2789,8 @@ function renderPhotos(){
       const n = groups.filter(x=>x.key === gr.key).length;
       g.append(el("div",{class:"pgh"}, el("b",{text:gr.title}), el("small",{text:[sub, n + (n === 1 ? " foto" : " fotos")].filter(Boolean).join(" · ")})));
     }
-    g.append(el("button",{class:"ph", type:"button", "data-img":id, "aria-label":"Abrir foto "+(i+1), text:"…", onclick:()=>openLightbox(i)}));
+    const pick = albCoverPick === a.id;
+    g.append(el("button",{class:"ph", type:"button", "data-img":id, "aria-label":(pick ? "Usar como capa a foto " : "Abrir foto ")+(i+1), text:"…", style: pick && id === albCover(a) ? "outline:3px solid var(--rose);outline-offset:-3px" : null, onclick:()=> pick ? setAlbumCover(a, id) : openLightbox(i)}));
   });
   v.append(g); observeImages();
 }
@@ -3061,6 +3069,19 @@ $("lbDate").addEventListener("click", ()=>{
 
 /* ---------- Apagar álbum ---------- */
 let albDelAsk = null;
+/* capa do álbum: a foto escolhida pela família; se não tiver (ou se ela foi removida), a primeira */
+let albCoverPick = null;
+function albCover(a){ return a.capa && a.fotos.includes(a.capa) ? a.capa : a.fotos[0]; }
+async function setAlbumCover(a, id){
+  albCoverPick = null;
+  try{
+    setStatus("", "Salvando a capa…");
+    await q(sb.from("albuns").update({capa_path: id}).eq("id", a.id));
+    a.capa = id;
+    setStatus("ok", "Capa do álbum “" + a.nome + "” trocada.");
+  }catch(e){ setStatus("warn", /capa_path/.test(e?.message || "") ? "Para trocar a capa, falta rodar o SQL 05 no Supabase." : explain(e)); }
+  render();
+}
 async function deleteAlbum(a){
   try{
     setStatus("", "Apagando o álbum…");
@@ -4544,8 +4565,8 @@ async function laudoFlow(sources){
 function laudoRow(it, doc){
   const chk = el("input",{type:"checkbox", style:"width:22px;height:22px;flex:none"}); chk.checked = it.on !== false;
   const nome = el("input",{list:"laudoExList", value: it.nome || "", placeholder:"Nome do exame"});
-  const alvo = el("select",{}, el("option",{value:"mae", text:"Mãe · pré-natal"}), el("option",{value:"bebe", text:"Bebê"}));
-  alvo.value = it.alvo || "mae";
+  const alvo = el("select",{}, PRENATAL ? el("option",{value:"mae", text:"Mãe · pré-natal"}) : null, el("option",{value:"bebe", text:"Bebê"}));
+  alvo.value = PRENATAL ? (it.alvo || "mae") : "bebe";
   const res = el("select",{}, el("option",{value:"", text:"Resultado do teste…"}), ...["Normal","Alterado","Aguardando resultado","Repetir"].map(x=>el("option",{text:x})));
   res.value = it.res || "";
   const resWrap = el("label",{}, "Resultado do teste", res); resWrap.hidden = !it.neo;
@@ -4702,7 +4723,7 @@ function pnEvent(e){
 }
 function agendaItems(days){
   const today = toISO(new Date()), lim = addDays(today, days || 30), out = [];
-  for (const e of pnList()) if (e.d >= today && e.d <= lim)
+  for (const e of PRENATAL ? pnList() : []) if (e.d >= today && e.d <= lim)
     out.push({d:e.d, time:e.hora || "", title:pnTitle(e), sub:[e.hora ? fmtHora(e.hora) : "", e.local].filter(Boolean).join(" · "), ev:pnEvent(e)});
   if (settings.nasc){
     const nome = settings.nome ? first(settings.nome) : "bebê";

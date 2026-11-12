@@ -2720,7 +2720,7 @@ async function loadAlbums(){
   const al = await q(sb.from("albuns").select("*").eq("familia_id", famId).order("criado_em", {ascending:false}));
   const ids = al.map(a=>a.id);
   const fs = ids.length ? await q(sb.from("album_fotos").select("*").in("album_id", ids).order("data").order("criado_em").limit(20000)) : [];
-  albums = al.map(a=>({id:a.id, nome:a.nome, criado:a.criado_em||"", u:a.autor||"", fotos:[], datas:{}, rows:{}}));
+  albums = al.map(a=>({id:a.id, nome:a.nome, criado:a.criado_em||"", u:a.autor||"", capa:a.capa_path||"", fotos:[], datas:{}, rows:{}}));
   const by = Object.fromEntries(albums.map(a=>[a.id, a]));
   for (const f of fs){ const a = by[f.album_id]; if (!a) continue; a.fotos.push(f.foto_path); if (f.data) a.datas[f.foto_path] = f.data; a.rows[f.foto_path] = f.id; }
   albLoaded = true; albErr = "";
@@ -2737,7 +2737,7 @@ function renderPhotos(){
   }
   const a = albOpen ? albums.find(x=>x.id === albOpen) : null;
   if (!a){
-    albOpen = null;
+    albOpen = null; albCoverPick = null;
     v.append(el("div",{class:"daynav"}, el("button",{class:"mini", type:"button", text:"‹ Diário", onclick:()=>{ tab = "tl"; render(); }}), el("span")));
     v.append(el("div",{class:"sec"}, el("h2",{text:"Álbuns de fotos"}),
       visit ? null : el("button",{class:"mini", type:"button", text:"+ Novo álbum", onclick:()=>openAlbumDlg("new")}),
@@ -2750,7 +2750,7 @@ function renderPhotos(){
     const g = el("div",{class:"albgrid"});
     for (const x of albums){
       g.append(el("button",{class:"albcard", type:"button", onclick:()=>{ albOpen = x.id; render(); window.scrollTo(0,0); }},
-        x.fotos[0] ? el("div",{class:"ph", "data-img":x.fotos[0], text:"…"}) : el("div",{class:"ph", text:"Sem fotos"}),
+        x.fotos[0] ? el("div",{class:"ph", "data-img":albCover(x), text:"…"}) : el("div",{class:"ph", text:"Sem fotos"}),
         el("div",{class:"albmeta"}, el("b",{text:x.nome}), el("small",{text:x.fotos.length+(x.fotos.length===1?" foto":" fotos")+(x.criado?" · "+short(x.criado.slice(0,10)):"")}))));
     }
     v.append(g); observeImages(); return;
@@ -2761,13 +2761,18 @@ function renderPhotos(){
   v.append(el("div",{class:"sec", style:"margin-top:6px"}, el("h2",{text:a.nome}),
     el("p",{text:a.fotos.length+(a.fotos.length===1?" foto":" fotos")+(byLine(a.u)?" · criado "+byLine(a.u):"")})));
   if (!visit){
-    v.append(albDelAsk === a.id
+    v.append(albCoverPick === a.id
+      ? el("div",{class:"notice"},
+          el("p",{}, el("strong",{text:"Escolha a capa: "}), "toque na foto que vai aparecer na frente do álbum."),
+          el("div",{class:"row"}, el("button",{class:"btn ghost", type:"button", text:"Cancelar", onclick:()=>{ albCoverPick = null; render(); }})))
+      : albDelAsk === a.id
       ? el("div",{class:"notice rose"},
           el("p",{}, el("strong",{text:"Apagar o álbum “" + a.nome + "”" + (a.fotos.length ? " e as " + a.fotos.length + (a.fotos.length === 1 ? " foto" : " fotos") : "") + "? "}), "Não dá para desfazer."),
           el("div",{class:"row"},
             el("button",{class:"btn rose", type:"button", text:"Sim, apagar", onclick:()=>deleteAlbum(a)}),
             el("button",{class:"btn ghost", type:"button", text:"Não", onclick:()=>{ albDelAsk = null; render(); }})))
       : el("div",{class:"row", style:"margin:-4px 0 10px;gap:16px"},
+          a.fotos.length ? el("button",{class:"del", type:"button", text:"Escolher capa", onclick:()=>{ albCoverPick = a.id; render(); }}) : null,
           a.fotos.length ? el("button",{class:"del", type:"button", text:"Mudar datas das fotos", onclick:()=>openAlbumDates(a)}) : null,
           el("button",{class:"del", type:"button", text:"Apagar álbum", onclick:()=>{ albDelAsk = a.id; render(); }})));
   }
@@ -2784,7 +2789,8 @@ function renderPhotos(){
       const n = groups.filter(x=>x.key === gr.key).length;
       g.append(el("div",{class:"pgh"}, el("b",{text:gr.title}), el("small",{text:[sub, n + (n === 1 ? " foto" : " fotos")].filter(Boolean).join(" · ")})));
     }
-    g.append(el("button",{class:"ph", type:"button", "data-img":id, "aria-label":"Abrir foto "+(i+1), text:"…", onclick:()=>openLightbox(i)}));
+    const pick = albCoverPick === a.id;
+    g.append(el("button",{class:"ph", type:"button", "data-img":id, "aria-label":(pick ? "Usar como capa a foto " : "Abrir foto ")+(i+1), text:"…", style: pick && id === albCover(a) ? "outline:3px solid var(--rose);outline-offset:-3px" : null, onclick:()=> pick ? setAlbumCover(a, id) : openLightbox(i)}));
   });
   v.append(g); observeImages();
 }
@@ -3063,6 +3069,19 @@ $("lbDate").addEventListener("click", ()=>{
 
 /* ---------- Apagar álbum ---------- */
 let albDelAsk = null;
+/* capa do álbum: a foto escolhida pela família; se não tiver (ou se ela foi removida), a primeira */
+let albCoverPick = null;
+function albCover(a){ return a.capa && a.fotos.includes(a.capa) ? a.capa : a.fotos[0]; }
+async function setAlbumCover(a, id){
+  albCoverPick = null;
+  try{
+    setStatus("", "Salvando a capa…");
+    await q(sb.from("albuns").update({capa_path: id}).eq("id", a.id));
+    a.capa = id;
+    setStatus("ok", "Capa do álbum “" + a.nome + "” trocada.");
+  }catch(e){ setStatus("warn", /capa_path/.test(e?.message || "") ? "Para trocar a capa, falta rodar o SQL 05 no Supabase." : explain(e)); }
+  render();
+}
 async function deleteAlbum(a){
   try{
     setStatus("", "Apagando o álbum…");

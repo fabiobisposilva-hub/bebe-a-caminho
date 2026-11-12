@@ -600,6 +600,38 @@ function run(name, startUser, url, steps, prep){
     assert(w.document.getElementById("lbDate").hidden, "sem Mudar data");
   }, db=>{ db.album_fotos.push({id:"f1", album_id:"a1", foto_path:"fam-bispo/albuns/1.jpg", data:"2026-08-17"}); });
 
+  await run("capa do álbum: escolher, trocar de novo e cancelar", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+    await unlock("segredo1");
+    const capa = ()=>w.document.querySelector(".albcard .ph").getAttribute("data-img");
+    btn("Álbuns").click(); await wait(100);
+    assert(capa() === "fam-bispo/albuns/1.jpg", "sem escolha, a capa é a primeira foto");
+    [...w.document.querySelectorAll(".albcard")][0].click(); await wait(100);
+    btn("Escolher capa").click(); await wait(50);
+    assert(view("view-ft").includes("Escolha a capa"), "pede para tocar na foto");
+    w.document.querySelectorAll(".photogrid button.ph")[2].click(); await wait(150);
+    assert(db.albuns.find(a=>a.id === "a1").capa_path === "fam-bispo/albuns/3.jpg", "capa gravada no banco");
+    assert(w.document.getElementById("lbox").hidden !== false && !view("view-ft").includes("Escolha a capa"), "não abriu a foto e saiu do modo de escolha");
+    // trocar de novo, depois
+    btn("Escolher capa").click(); await wait(50);
+    w.document.querySelectorAll(".photogrid button.ph")[1].click(); await wait(150);
+    assert(db.albuns.find(a=>a.id === "a1").capa_path === "fam-bispo/albuns/2.jpg", "trocou a capa de novo");
+    btn("‹ Álbuns").click(); await wait(50);
+    assert(capa() === "fam-bispo/albuns/2.jpg", "a lista de álbuns mostra a capa escolhida");
+    // Cancelar não muda nada
+    [...w.document.querySelectorAll(".albcard")][0].click(); await wait(100);
+    btn("Escolher capa").click(); await wait(50); btn("Cancelar").click(); await wait(50);
+    w.document.querySelectorAll(".photogrid button.ph")[0].click(); await wait(100);
+    assert(db.albuns.find(a=>a.id === "a1").capa_path === "fam-bispo/albuns/2.jpg" && !w.document.getElementById("lbox").hidden, "cancelar volta a abrir a foto normal");
+  }, db=>{ db.album_fotos.push({id:"f1", album_id:"a1", foto_path:"fam-bispo/albuns/1.jpg", data:"2026-08-17"}, {id:"f2", album_id:"a1", foto_path:"fam-bispo/albuns/2.jpg", data:"2026-08-18"}, {id:"f3", album_id:"a1", foto_path:"fam-bispo/albuns/3.jpg", data:"2026-08-19"}); });
+
+  await run("capa do álbum: se a foto da capa for removida, volta para a primeira; visitante não vê Escolher capa", null, null, async ({w, btn, wait, login, assert})=>{
+    await login("ana@x.com", "segredo2");
+    w.document.getElementById("tab-ft").click(); await wait(100);
+    assert(w.document.querySelector(".albcard .ph").getAttribute("data-img") === "fam-bispo/albuns/1.jpg", "capa removida → primeira foto");
+    [...w.document.querySelectorAll(".albcard")][0].click(); await wait(100);
+    assert(!btn("Escolher capa"), "visitante não troca a capa");
+  }, db=>{ db.albuns[0].capa_path = "fam-bispo/albuns/apagada.jpg"; db.album_fotos.push({id:"f1", album_id:"a1", foto_path:"fam-bispo/albuns/1.jpg", data:"2026-08-17"}); });
+
   const seedShare = (w, list)=>new Promise((ok, no)=>{
     const r = w.indexedDB.open("bebe-share", 1);
     r.onupgradeneeded = ()=>r.result.createObjectStore("f", {autoIncrement:true});

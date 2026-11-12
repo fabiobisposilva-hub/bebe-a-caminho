@@ -32,6 +32,8 @@
 - **Sem** data por cima das miniaturas dos álbuns (o Fabio não gostou); a data aparece ao abrir a foto.
 - **Sem** o ✕ no canto da foto aberta; o Fechar fica embaixo, acima do selo do Netlify.
 - O texto não fala mais em "Google Drive" (era da versão antiga, dentro do Claude).
+- **Pré-natal desligado** (11/2026), para a versão de teste em família e a comercial: `const PRENATAL = false` no index.html. Os registros antigos continuam no banco.
+- **Capa do álbum** escolhida pela família ("Escolher capa" dentro do álbum); sem escolha, é a primeira foto.
 - Selo "Powered by Netlify": o Fabio pode desligar em Project configuration → General → Powered by Netlify badge.
 
 ## Problemas que já apareceram (para não voltarem)
@@ -50,6 +52,9 @@
 - **Bom dia:** quando um envio falhava, o registro de "já enviado" travava as próximas tentativas. Agora ele é apagado quando falha.
 
 ## Em aberto ou não testado em celular de verdade
+
+- **Rodar o SQL 05** (`supabase/sql/05-capa-album.sql`) no Supabase, para a capa do álbum funcionar.
+- Revisão de QA, celular e publicação em `docs/REVISAO-QA.md`, com o roteiro de teste em família e o que falta para vender.
 
 - "Compartilhar → BeBê a CaMinHo" só aparece se o app for instalado pelo **Chrome**. Pode ser preciso remover e reinstalar o ícone.
   Não foi testado num Samsung de verdade.

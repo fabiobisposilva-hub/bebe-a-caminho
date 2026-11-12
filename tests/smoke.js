@@ -837,6 +837,14 @@ function run(name, startUser, url, steps, prep){
     assert(w.document.getElementById("view-tl").textContent.includes("ela sorriu"), "aparece atualizado");
   });
 
+  await run("bibliotecas da internet com versão fixa (uma atualização de fora não quebra o app)", "fabio@x.com", null, async ({assert})=>{
+    const src = fs.readFileSync(__dirname + "/../app/index.html", "utf8");
+    const libs = [...src.matchAll(/https:\/\/cdn\.jsdelivr\.net\/npm\/([^"'\s)]+)/g)].map(m=>m[1]);
+    assert(libs.length >= 4, "achei as bibliotecas: " + libs.length);
+    const soltas = libs.filter(x=>!/@\d+\.\d+\.\d+/.test(x));
+    assert(!soltas.length, "sem versão exata: " + soltas.join(", "));
+  });
+
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");
     await unlock("segredo1");

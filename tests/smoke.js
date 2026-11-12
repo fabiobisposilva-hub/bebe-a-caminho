@@ -157,6 +157,7 @@ function run(name, startUser, url, steps, prep){
       w.HTMLDialogElement.prototype.close = function(){ this.open = false; };
       w.scrollTo = ()=>{};
       if (db.__ls) for (const [k, v] of Object.entries(db.__ls)) w.localStorage.setItem(k, typeof v === "function" ? v() : v);
+      if (db.__win) db.__win(w);
       globalThis.__Blob = w.Blob;
       if (!w.Blob.prototype.arrayBuffer) w.Blob.prototype.arrayBuffer = function(){ return new Promise((ok,no)=>{ const r = new w.FileReader(); r.onload=()=>ok(r.result); r.onerror=no; r.readAsArrayBuffer(this); }); };
       if (!w.TextDecoder) w.TextDecoder = require("util").TextDecoder;
@@ -850,6 +851,50 @@ function run(name, startUser, url, steps, prep){
     const t = w.document.body.textContent;
     assert(t.includes("Cloudflare Pages") && !t.includes("Netlify"), "privacidade com o Cloudflare e sem o Netlify");
   });
+
+  /* leitor de digital simulado (WebAuthn): conta quantas vezes o celular pediu a digital */
+  const BIO = (ok = true)=>w=>{
+    const c = w.__bio = {create:0, get:0};
+    if (!w.TextEncoder) w.TextEncoder = require("util").TextEncoder;
+    w.PublicKeyCredential = {isUserVerifyingPlatformAuthenticatorAvailable: async ()=>true};
+    Object.defineProperty(w.navigator, "credentials", {configurable:true, value:{
+      create: async ()=>{ c.create++; if (!ok) throw Object.assign(new Error("x"), {name:"NotAllowedError"}); return {rawId: new Uint8Array([1,2,3]).buffer}; },
+      get: async ()=>{ c.get++; if (!ok) throw Object.assign(new Error("x"), {name:"NotAllowedError"}); return {}; },
+    }});
+  };
+
+  await run("digital: ao voltar depois de 30 min, o celular já pede a digital e destrava", "fabio@x.com", null, async ({w, L, view, wait, assert})=>{
+    await wait(500);
+    assert(w.__bio.get >= 1, "pediu a digital sozinho");
+    assert(L().hidden && view("view-tl").includes("Ultrassom 3D"), "destravou e abriu o Diário");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID"}; db.__win = BIO(); });
+
+  await run("digital: se o celular não liberar, a senha e o botão continuam lá", "fabio@x.com", null, async ({w, L, btn, wait, unlock, assert})=>{
+    await wait(500);
+    assert(w.__bio.get >= 1 && !L().hidden, "tentou e continua na tela de entrar");
+    assert(btn("Entrar com a digital") && !L().textContent.includes("Não deu para usar a digital"), "sem mensagem de erro assustando, botão disponível");
+    await unlock("segredo1");
+    assert(L().hidden, "entrou com a senha");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID"}; db.__win = BIO(false); });
+
+  await run("digital: entrou com a senha num aparelho sem digital → oferece cadastrar; depois o botão aparece", "fabio@x.com", null, async ({w, L, btn, wait, unlock, assert})=>{
+    assert(!btn("Entrar com a digital"), "ainda sem digital neste aparelho");
+    await unlock("segredo1"); await wait(150);
+    assert(!L().hidden && L().textContent.includes("Cadastre sua digital"), "oferece cadastrar a digital");
+    btn("Cadastrar digital").click(); await wait(900);
+    assert(w.__bio.create === 1 && w.localStorage.getItem("pm-cred-u-fabio"), "digital guardada neste aparelho");
+    assert(L().hidden, "segue para o app");
+    // Ajustes: dá para cadastrar de novo
+    w.document.getElementById("openSettings").click(); await wait(100);
+    const b = [...w.document.querySelectorAll("button")].find(x=>x.textContent.includes("cadastrar de novo"));
+    assert(b && !b.disabled, "em Ajustes: cadastrar de novo");
+  }, db=>{ db.__win = BIO(); });
+
+  await run("digital: quem tocou em Pular não é perguntado de novo", "fabio@x.com", null, async ({w, L, btn, wait, unlock, assert})=>{
+    await unlock("segredo1"); await wait(150);
+    btn("Pular por enquanto").click(); await wait(100);
+    assert(L().hidden && w.localStorage.getItem("pm-bio-pular-u-fabio") === "1", "lembrou do Pular");
+  }, db=>{ db.__win = BIO(); });
 
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");

@@ -2267,10 +2267,11 @@ function famBox(){
     el("button",{class:"btn rose", type:"button", text:"Convidar responsável", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("responsavel"); }catch(e){ setStatus("warn", explain(e)); } }}),
     el("button",{class:"btn", type:"button", text:"Convidar visitantes", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("visitante"); }catch(e){ setStatus("warn", explain(e)); } }})));
   const bioBtn = el("button",{class:"btn ghost", type:"button", text:"Digital neste aparelho", hidden:true, onclick:async ()=>{
-    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; bioBtn.disabled = true; }
-    catch(_){ bioBtn.textContent = "Digital indisponível aqui"; bioBtn.disabled = true; }
+    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Na próxima vez que abrir o app, é só encostar o dedo."); }
+    catch(e){ bioBtn.textContent = "Tentar a digital de novo"; setStatus("warn", e?.name === "NotAllowedError" ? "O cadastro da digital foi cancelado. Toque de novo em Ajustes → Tentar a digital de novo." : "Este celular não liberou a digital aqui. Abra o app pelo ícone instalado pelo Chrome e tente de novo."); }
   }});
-  if (meMember){ bioBtn.hidden = false; if (getCred()){ bioBtn.textContent = "Digital cadastrada ✓"; bioBtn.disabled = true; } }
+  /* mesmo já cadastrada, dá para cadastrar de novo (ex.: trocou de celular, limpou os dados ou mudou o endereço do app) */
+  if (meMember){ bioBtn.hidden = false; if (getCred()) bioBtn.textContent = "Digital cadastrada ✓ · cadastrar de novo"; }
   box.append(el("div",{style:"font-weight:700;font-size:14px;margin:14px 0 6px", text:"Minha conta"}));
   box.append(el("div",{class:"row"},
     el("button",{class:"btn ghost", type:"button", text:"Editar meu cadastro", onclick:()=>{ $("setDlg").close(); openSignup(); }}),
@@ -2358,7 +2359,7 @@ function showQuickUnlock(next){
     err.hidden = true;
     if (!pw.value){ err.textContent = "Digite a senha."; err.hidden = false; return; }
     btn.disabled = true; btn.textContent = "Conferindo…";
-    try{ await q(sb.auth.signInWithPassword({email: meMember.email, password: pw.value})); unlocked = true; next(); return; }
+    try{ await q(sb.auth.signInWithPassword({email: meMember.email, password: pw.value})); unlocked = true; bioAsk = !getCred() && !bioSkipped(); next(); return; }
     catch(e){ err.textContent = explain(e); err.hidden = false; pw.select(); }
     btn.disabled = false; btn.textContent = "Entrar";
   };
@@ -2378,6 +2379,11 @@ function showQuickUnlock(next){
       el("button",{class:"del", type:"button", text:"Esqueci a senha", onclick:()=>showForgot(meMember?.email)}),
       el("button",{class:"del", type:"button", text:"Outra conta", onclick:signOut})));
   if (!bio) setTimeout(()=>pw.focus(), 50);
+  /* já pede a digital sozinho ao abrir; se o celular não deixar, o botão continua ali */
+  else setTimeout(async ()=>{
+    if (!bio.isConnected || unlocked) return;
+    try{ await bioCheck(); if (!unlocked && bio.isConnected){ unlocked = true; next(); } }catch(_){}
+  }, 350);
 }
 function showChangePassword(){
   const err = el("p",{class:"err", hidden:true});
@@ -2409,8 +2415,11 @@ async function offerBio(then){
     el("p",{class:"hint", text:"Toque em Cadastrar digital: o próprio celular vai pedir sua digital (ou o rosto). Depois é só encostar o dedo para entrar. A senha continua valendo."}),
     err,
     el("div",{class:"row", style:"justify-content:center"}, btn,
-      el("button",{class:"btn ghost", type:"button", text:"Pular por enquanto", onclick:done})));
+      el("button",{class:"btn ghost", type:"button", text:"Pular por enquanto", onclick:()=>{ try{ localStorage.setItem("pm-bio-pular-" + (meMember?.fid || ""), "1"); }catch(_){} done(); }})));
 }
+/* Entrou com a senha e este aparelho ainda não tem a digital: oferece cadastrar (uma vez; "Pular" não pergunta mais) */
+let bioAsk = false;
+function bioSkipped(){ try{ return localStorage.getItem("pm-bio-pular-" + (meMember?.fid || "")) === "1"; }catch(_){ return false; } }
 /* Usa o recurso de digital/rosto do próprio celular (padrão WebAuthn, o mesmo das chaves de acesso) */
 async function bioFlow(btn, err, onOk){
   err.hidden = true; btn.disabled = true; btn.textContent = "Aguardando o celular…";
@@ -3487,7 +3496,8 @@ async function afterLogin(fresh, isNew){
     if (isNew){
       const afterBio = ()=>offerBio(()=>{ next(); bdWelcome(); });
       if (mode === "drive") showCoverPicker(afterBio); else afterBio();
-    } else { next(); if (!needBaby) setTimeout(()=> sharePending ? handleShared() : bdWelcome(), 400); }
+    } else if (bioAsk && !sharePending){ bioAsk = false; offerBio(()=>{ next(); if (!needBaby) bdWelcome(); }); }
+    else { bioAsk = false; next(); if (!needBaby) setTimeout(()=> sharePending ? handleShared() : bdWelcome(), 400); }
   }catch(err){ showOffline(explain(err)); }
 }
 function pendingInvite(){ try{ return localStorage.getItem("pm-convite") || ""; }catch(_){ return ""; } }

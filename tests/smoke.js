@@ -2,6 +2,9 @@
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const html = fs.readFileSync(__dirname + "/../app/index.html", "utf8").replace(/<script src="https:\/\/cdn[^>]+><\/script>/, "").replace("function icsFile(evs){", "window.__icsFile = e=>icsFile(e);\nfunction icsFile(evs){");
+/* o Pré-natal está desligado no app (PRENATAL = false); os testes dele religam a chave com runPN */
+const htmlPN = html.replace("const PRENATAL = false;", "const PRENATAL = true;");
+let PAGE = html;
 const FB = "fam-bispo", BABY = "bebe-maria";
 const PH = __dirname + "/fixtures/fotos/";
 
@@ -144,10 +147,11 @@ function mockSupabase(db, startUser){
 }
 
 const RESULT = {ok:0, fail:0};
+function runPN(...a){ PAGE = htmlPN; return run(...a).finally(()=>{ PAGE = html; }); }
 function run(name, startUser, url, steps, prep){
   return new Promise(res=>{
     const db = makeDB(); if (prep) prep(db);
-    const dom = new JSDOM(html, { runScripts:"dangerously", pretendToBeVisual:true, url: url || "https://bebe.example/", beforeParse(w){
+    const dom = new JSDOM(PAGE, { runScripts:"dangerously", pretendToBeVisual:true, url: url || "https://bebe.example/", beforeParse(w){
       w.IntersectionObserver = class{ observe(){} unobserve(){} };
       w.HTMLDialogElement.prototype.showModal = function(){ this.open = true; };
       w.HTMLDialogElement.prototype.close = function(){ this.open = false; };
@@ -268,7 +272,7 @@ function run(name, startUser, url, steps, prep){
     assert(r && r.foto_path.startsWith(FB + "/diario/") && r.data === "2026-08-17", "foto em " + (r && r.foto_path) + " com data " + (r && r.data));
   });
 
-  await run("pré-natal: exame marcado com PDF, agenda e lembrete", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+  await runPN("pré-natal: exame marcado com PDF, agenda e lembrete", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     assert(view("view-pn").includes("Pré-natal da mãe"), "aba pré-natal");
@@ -310,7 +314,7 @@ function run(name, startUser, url, steps, prep){
     assert(ics.includes("SUMMARY:Consulta\\, teste"), "vírgula escapada");
   });
 
-  await run("guia do pré-natal: semana, exames, vacinas e fontes", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+  await runPN("guia do pré-natal: semana, exames, vacinas e fontes", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     const g = view("view-pn");
@@ -337,7 +341,7 @@ function run(name, startUser, url, steps, prep){
     w.document.createElement = real;
     Object.defineProperty(picker, "files", {value: files}); picker.dispatchEvent(new w.Event("change"));
   };
-  await run("ler laudo do laboratório: 6 exames, atualiza o marcado e cria os outros", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+  await runPN("ler laudo do laboratório: 6 exames, atualiza o marcado e cria os outros", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     pickFiles(w, "📄 Ler laudo", [new w.File([fs.readFileSync(LD + "laboratorio.pdf")], "laboratorio.pdf", {type:"application/pdf"})]);
@@ -361,7 +365,7 @@ function run(name, startUser, url, steps, prep){
     assert(view("view-pn").includes("Registrado em 10/10/2026"), "guia marca como feito");
   }, db=>db.registros.push({id:"pnm1", bebe_id:BABY, tipo:"pn_exame", data:"2026-10-05", texto:"", dados:{exame:"Hemograma"}, visivel:false}));
 
-  await run("anexar ultrassom no formulário preenche sozinho", "fabio@x.com", null, async ({w, db, btn, wait, unlock, assert})=>{
+  await runPN("anexar ultrassom no formulário preenche sozinho", "fabio@x.com", null, async ({w, db, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     btn("+ Exame").click(); await wait(50);
@@ -375,7 +379,7 @@ function run(name, startUser, url, steps, prep){
     assert(r && r.data === "2026-08-22" && r.dados.lidos.length === 1 && r.dados.anexos[0].path.endsWith(".pdf"), "salvo e marcado como lido");
   });
 
-  await run("anexo antigo não lido: aviso e leitura atualiza o próprio registro", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+  await runPN("anexo antigo não lido: aviso e leitura atualiza o próprio registro", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     assert(view("view-pn").includes("1 anexo ainda não foi lido"), "aviso de não lido");
@@ -396,6 +400,7 @@ function run(name, startUser, url, steps, prep){
     await wait(1500);
     const sel = [...w.document.querySelectorAll("#laudoBody select")];
     assert(sel[0].value === "bebe" && sel[1].value === "Normal", "bebê e Normal");
+    assert(![...sel[0].options].some(o=>o.value === "mae"), "sem pré-natal: o laudo não oferece Mãe · pré-natal");
     w.document.getElementById("laudoSave").click(); await wait(300);
     const r = db.registros.find(x=>x.tipo === "exame");
     assert(r && r.dados.ex === "pezinho" && r.dados.res === "Normal" && r.data === "2026-09-15", "teste do pezinho registrado");
@@ -727,7 +732,7 @@ function run(name, startUser, url, steps, prep){
 
   /* laudo real do Sabin: fica em tests/fixtures/privado (fora do Git). Sem ele, o teste é pulado. */
   if (fs.existsSync(PRIV + "sabin.pdf")){
-  await run("laudo do Sabin: 42 exames lidos, a lista do pré-natal continua e ler de novo não duplica", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+  await runPN("laudo do Sabin: 42 exames lidos, a lista do pré-natal continua e ler de novo não duplica", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     pickFiles(w, "📄 Ler laudo", [new w.File([fs.readFileSync(PRIV + "sabin.pdf")], "sabin.pdf", {type:"application/pdf"})]);
@@ -761,7 +766,7 @@ function run(name, startUser, url, steps, prep){
   }, db=>db.registros.push({id:"pnm1", bebe_id:BABY, tipo:"pn_exame", data:"2026-10-14", texto:"", dados:{exame:"Hemograma"}, visivel:false}));
   } else console.log("PULADO laudo do Sabin (coloque o PDF em tests/fixtures/privado/sabin.pdf)");
 
-  await run("guia do pré-natal fica como a pessoa deixou", "fabio@x.com", null, async ({w, wait, unlock, assert})=>{
+  await runPN("guia do pré-natal fica como a pessoa deixou", "fabio@x.com", null, async ({w, wait, unlock, assert})=>{
     await unlock("segredo1");
     w.document.getElementById("tab-pn").click(); await wait(50);
     const d = ()=>w.document.querySelector("#view-pn details");
@@ -799,6 +804,17 @@ function run(name, startUser, url, steps, prep){
     assert(db.registros.find(x=>x.id === "r1").texto === "Ultrassom 3D: ela sorriu!" && db.registros.filter(x=>x.tipo === "momento").length === 1, "editado");
     assert(w.document.getElementById("view-tl").textContent.includes("ela sorriu"), "aparece atualizado");
   });
+
+  await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+    assert(htmlPN !== html, "a chave PRENATAL existe no app");
+    await unlock("segredo1");
+    assert(w.document.getElementById("tab-pn").hidden, "aba Pré-natal escondida para o responsável");
+    assert(!btn("Pré-natal"), "sem o atalho Pré-natal no Diário");
+    assert(!view("view-tl").includes("Ultrassom morfológico"), "consulta/exame da mãe fora da agenda");
+    w.document.getElementById("tab-pn").click(); await wait(50);
+    assert(!w.document.getElementById("view-tl").hidden && w.document.getElementById("view-pn").hidden, "mesmo forçando, volta ao Diário");
+    assert(db.registros.some(x=>x.id === "pnf1"), "registro antigo não foi apagado");
+  }, db=>db.registros.push({id:"pnf1", bebe_id:BABY, tipo:"pn_exame", data: new Date(Date.now() + 5*864e5).toISOString().slice(0,10), texto:"", dados:{exame:"Ultrassom morfológico"}, visivel:false}));
 
   console.log("\n" + RESULT.ok + " passaram, " + RESULT.fail + " falharam");
 })();

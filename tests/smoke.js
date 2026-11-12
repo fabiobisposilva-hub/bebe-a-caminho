@@ -459,6 +459,9 @@ function run(name, startUser, url, steps, prep){
     w.document.querySelector(".photogrid button.ph").click(); await wait(100);
     assert(w.document.getElementById("lbDl").hidden, "visitante sem Baixar");
     assert(!w.document.getElementById("lbWm").hidden && w.document.getElementById("lbWm").textContent.includes("Só visualização · Ana"), "marca-d'água com o nome");
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    assert(w.document.getElementById("lbWm").textContent.includes("Ana Souza · " + hoje), "marca-d'água da foto aberta com nome completo e data de hoje");
+    assert(w.document.body.style.getPropertyValue("--wm").includes("Ana Souza · " + hoje), "miniaturas com nome completo e data de hoje");
     const ev = new w.MouseEvent("contextmenu", {bubbles:true, cancelable:true});
     w.document.getElementById("lbImg").dispatchEvent(ev);
     assert(ev.defaultPrevented, "toque longo/menu bloqueado");

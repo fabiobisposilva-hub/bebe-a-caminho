@@ -845,6 +845,12 @@ function run(name, startUser, url, steps, prep){
     assert(!soltas.length, "sem versão exata: " + soltas.join(", "));
   });
 
+  await run("política de privacidade cita a hospedagem atual (Cloudflare Pages)", null, null, async ({w, btn, wait, assert})=>{
+    w.document.getElementById("privLink").click(); await wait(100);
+    const t = w.document.body.textContent;
+    assert(t.includes("Cloudflare Pages") && !t.includes("Netlify"), "privacidade com o Cloudflare e sem o Netlify");
+  });
+
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");
     await unlock("segredo1");

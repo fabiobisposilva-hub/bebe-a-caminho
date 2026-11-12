@@ -2,7 +2,7 @@
 
 O diário da Maria (DPP 28/01/2027, menina), feito para o Fabio (pai) e a Thaís (mãe, pediatra).
 O dono do projeto **não é programador**: explique tudo em português do Brasil, simples, passo a passo,
-e diga exatamente onde clicar quando ele precisar fazer algo fora do código (Supabase, Netlify, GitHub).
+e diga exatamente onde clicar quando ele precisar fazer algo fora do código (Supabase, Cloudflare, GitHub).
 
 Leia também `docs/CONTEXTO.md`, que conta o que já foi feito, as decisões tomadas e os pontos em aberto.
 
@@ -16,7 +16,8 @@ Leia também `docs/CONTEXTO.md`, que conta o que já foi feito, as decisões tom
 - **Supabase** (projeto `bzauxpdymyegjsmvjjmb`): Postgres com RLS, login por e-mail e senha,
   Storage no bucket `fotos` (`<familia_id>/<pasta>/<uuid>.jpg|pdf`), Edge Function `bom-dia`, pg_cron às 12:00 UTC (9h em Brasília).
   A chave publishable no index.html é pública por natureza; segredos nunca vão para o código.
-- **Netlify:** publica a pasta `app/` (veja `netlify.toml`). Site: https://bb-a-caminho.netlify.app
+- **Cloudflare Pages:** publica a pasta `app/` sozinho a cada merge na `main` (sem build). Site: https://bebe-a-caminho.pages.dev
+  (Até 11/2026 era o Netlify, em https://bb-a-caminho.netlify.app; saiu porque os créditos grátis acabavam.)
 
 ## Pastas
 
@@ -51,7 +52,7 @@ Leia também `docs/CONTEXTO.md`, que conta o que já foi feito, as decisões tom
    (`IMG-20260817-WA0001.jpg`, `20260817_143522.jpg`). Nunca use a data do upload sem perguntar (`confirmDates`).
 8. **Segredos** (VAPID privada, CRON_SECRET, senha do banco) nunca entram no repositório. Veja `.env.example`.
 9. **Celular primeiro:** a família usa Android (Samsung) com o app instalado. Pense no botão Voltar, no puxar para atualizar,
-   no selo do Netlify embaixo, em telas de 360 px e em internet fraca.
+   em telas de 360 px e em internet fraca.
 10. **Entrega:** faça commits pequenos com mensagem em português. No fim, explique em poucas linhas o que mudou
     e como o Fabio confere no celular.
 

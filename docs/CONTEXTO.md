@@ -26,7 +26,7 @@
 
 ## Decisões tomadas (não desfazer sem o Fabio pedir)
 
-- Hospedagem e banco **grátis** (Netlify + Supabase); o app não depende do Claude para funcionar.
+- Hospedagem e banco **grátis** (Cloudflare Pages + Supabase); o app não depende do Claude para funcionar.
 - No rodapé: "Desenvolvido por Fabio Bispo" e a data de criação.
 - Removida a opção "Pelos arquivos" na escolha de fotos.
 - **Sem** data por cima das miniaturas dos álbuns (o Fabio não gostou); a data aparece ao abrir a foto.
@@ -34,7 +34,7 @@
 - O texto não fala mais em "Google Drive" (era da versão antiga, dentro do Claude).
 - **Pré-natal desligado** (11/2026), para a versão de teste em família e a comercial: `const PRENATAL = false` no index.html. Os registros antigos continuam no banco.
 - **Capa do álbum** escolhida pela família ("Escolher capa" dentro do álbum); sem escolha, é a primeira foto.
-- Selo "Powered by Netlify": o Fabio pode desligar em Project configuration → General → Powered by Netlify badge.
+- **Hospedagem trocada do Netlify para o Cloudflare Pages** (11/2026): no Netlify grátis cada publicação gastava créditos e eles acabaram. Endereço novo: https://bebe-a-caminho.pages.dev. Ideia: registrar um domínio próprio (.com.br) antes de vender, para o endereço nunca mais mudar.
 
 ## Problemas que já apareceram (para não voltarem)
 
@@ -67,6 +67,6 @@
 
 ## Como publicar uma versão nova
 
-- **Com o repositório ligado ao Netlify:** basta juntar (merge) na branch `main`. O Netlify publica sozinho em cerca de 1 minuto.
-- **Sem ligar:** compacte o **conteúdo** da pasta `app/` em .zip e arraste o arquivo no site **bb-a-caminho**, em **Deploys**, no Netlify.
+- Basta juntar (merge) na branch `main`. O Cloudflare Pages publica sozinho em cerca de 1 minuto (veja em **Workers & Pages → bebe-a-caminho → Deployments**).
+- Para voltar uma versão: em **Deployments**, nos três pontinhos de uma publicação antiga → **Rollback to this deployment**.
 - **Depois de publicar:** no celular, puxe a tela para baixo ou feche e abra o app.

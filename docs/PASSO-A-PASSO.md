@@ -2,7 +2,7 @@
 
 **Como funciona:** o código fica guardado no **GitHub**, um site que guarda projetos e o histórico de cada mudança.
 O **Claude Code** abre o projeto de lá, faz as mudanças e roda os testes. Você revisa e aprova.
-Se o Netlify estiver ligado ao GitHub, o site atualiza sozinho e você não precisa mais arrastar o zip.
+O **Cloudflare Pages** está ligado ao GitHub: a cada merge, o site atualiza sozinho.
 
 Você precisa de um plano Pro, Max, Team ou Enterprise do Claude.
 
@@ -45,18 +45,17 @@ Você precisa de um plano Pro, Max, Team ou Enterprise do Claude.
 1. Quando ele terminar, clique no indicador de mudanças (algo como `+42 -18`) para ver o que mudou.
    Se quiser algum ajuste, escreva na conversa.
 2. Clique em **Create PR** e depois, no GitHub, em **Merge pull request** → **Confirm merge**.
-3. Publique, de um destes dois jeitos:
-   - **Automático (recomendado):** ligue o Netlify ao GitHub uma vez, como na Parte 5. Depois disso, todo merge publica sozinho em cerca de 1 minuto.
-   - **Como hoje:** baixe a pasta `app` do GitHub (**Code** → **Download ZIP**, e use só o que está dentro de `app`), compacte e arraste em **Deploys** no Netlify.
+3. Pronto: o Cloudflare Pages publica sozinho em cerca de 1 minuto (Parte 5 explica como ele foi ligado).
 4. No celular, puxe a tela para baixo ou feche e abra o app.
 
-## Parte 5: Netlify publicando sozinho (uma vez, opcional)
+## Parte 5: Cloudflare Pages publicando sozinho (uma vez)
 
-1. Em **app.netlify.com**, abra o site **bb-a-caminho**.
-2. Vá em **Project configuration** → **Build & deploy** → **Continuous deployment** → **Link repository** (ou **Link to Git**).
-3. Escolha **GitHub**, autorize e selecione `bebe-a-caminho`.
-4. Branch: `main`. Build command: **deixe vazio**. Publish directory: `app`. O arquivo `netlify.toml` já diz isso.
-5. Salve. A partir de agora, cada merge na `main` vira uma nova versão do site.
+1. Em **dash.cloudflare.com**, crie uma conta grátis (ou entre).
+2. No menu da esquerda: **Compute (Workers)** → **Workers & Pages** → **Create** → aba **Pages** → **Import an existing Git repository** (ou **Connect to Git**).
+3. Escolha **GitHub**, autorize e selecione `bebe-a-caminho` → **Begin setup**.
+4. Project name: `bebe-a-caminho`. Production branch: `main`. Framework preset: **None**.
+   Build command: **deixe vazio**. Build output directory: `app`.
+5. **Save and Deploy**. O endereço fica https://bebe-a-caminho.pages.dev, e cada merge na `main` vira uma nova versão.
 
 ## O que levar de contexto em cada tarefa
 

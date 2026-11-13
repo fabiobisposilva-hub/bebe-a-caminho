@@ -463,7 +463,7 @@ function run(name, startUser, url, steps, prep){
     assert(w.document.getElementById("lbWm").textContent.includes("Ana Souza · " + hoje), "marca-d'água da foto aberta com nome completo e data de hoje");
     assert(w.document.body.style.getPropertyValue("--wm").includes("Ana Souza · " + hoje), "miniaturas com nome completo e data de hoje");
     assert(!w.document.getElementById("lbWm").textContent.includes("Só visualização") && !w.document.body.style.getPropertyValue("--wm").includes("Só visualização"), "sem o texto Só visualização, só nome e data");
-    const css = w.document.querySelector("style").textContent;
+    const css = [...w.document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
     assert(css.includes(".photogrid{display:grid;grid-template-columns:repeat(2,"), "fotos maiores no álbum: 2 por linha");
     const ev = new w.MouseEvent("contextmenu", {bubbles:true, cancelable:true});
     w.document.getElementById("lbImg").dispatchEvent(ev);
@@ -901,6 +901,35 @@ function run(name, startUser, url, steps, prep){
     btn("Pular por enquanto").click(); await wait(100);
     assert(L().hidden && w.localStorage.getItem("pm-bio-pular-u-fabio") === "1", "lembrou do Pular");
   }, db=>{ db.__win = BIO(); });
+
+  await run("digital: entrou pela tela de login (e-mail e senha) num aparelho sem digital → oferece cadastrar", null, null, async ({w, L, btn, wait, login, assert})=>{
+    await login("fabio@x.com", "segredo1"); await wait(200);
+    assert(!L().hidden && L().textContent.includes("Cadastre sua digital"), "oferece cadastrar a digital logo depois do login");
+    btn("Cadastrar digital").click(); await wait(900);
+    assert(w.__bio.create === 1 && w.localStorage.getItem("pm-cred-u-fabio"), "digital guardada neste aparelho");
+    assert(L().hidden, "segue para o app");
+  }, db=>{ db.__win = BIO(); });
+
+  await run("digital: tela de entrar sem digital cadastrada mostra 'Usar a digital' e explica; vale mesmo para quem tinha pulado", "fabio@x.com", null, async ({w, L, btn, wait, unlock, assert})=>{
+    await wait(100);
+    const b = btn("Usar a digital");
+    assert(b && !b.hidden, "a opção da digital aparece na tela de entrar");
+    b.click(); await wait(50);
+    assert(L().textContent.includes("digite a senha só desta vez"), "explica que a senha é pedida uma vez");
+    assert(!w.localStorage.getItem("pm-bio-pular-u-fabio"), "esquece o Pular antigo");
+    await unlock("segredo1"); await wait(150);
+    assert(!L().hidden && L().textContent.includes("Cadastre sua digital"), "depois da senha, oferece cadastrar");
+  }, db=>{ db.__ls = {"pm-bio-pular-u-fabio":"1"}; db.__win = BIO(); });
+
+  await run("digital: celular sem leitor não mostra a opção na tela de entrar", "fabio@x.com", null, async ({btn, wait, assert})=>{
+    await wait(100);
+    const b = btn("Usar a digital");
+    assert(!b || b.hidden, "sem leitor, sem botão");
+  });
+
+  await run("rodapé mostra a versão publicada", "fabio@x.com", null, async ({w, assert})=>{
+    assert(w.document.querySelector("footer.credits").textContent.includes("Versão 1.1"), "Versão 1.1 no rodapé");
+  });
 
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");

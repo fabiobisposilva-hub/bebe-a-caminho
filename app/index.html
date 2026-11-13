@@ -305,7 +305,7 @@ a.btn{display:block;text-align:center;text-decoration:none}
   <footer class="credits">
     <div class="credits-name">BeBê a CaMinHo</div>
     <div>Desenvolvido por <strong>Fabio Bispo</strong></div>
-    <div>Criado em 1º de novembro de 2026 · Versão 1.0</div>
+    <div>Criado em 1º de novembro de 2026 · Versão 1.1</div>
     <div>© 2026 Fabio Bispo. Todos os direitos reservados.</div>
     <div><button class="del" type="button" id="privLink" style="align-self:center">Política de Privacidade</button></div>
   </footer>
@@ -2313,7 +2313,7 @@ async function bioRegister(){
 }
 async function bioCheck(){
   const id = getCred(); if (!id) throw new Error("sem digital");
-  await navigator.credentials.get({publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials:[{type:"public-key", id:unb64(id)}], userVerification:"required", timeout:60000}});
+  await navigator.credentials.get({publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials:[{type:"public-key", id:unb64(id), transports:["internal"]}], userVerification:"required", timeout:60000}});
 }
 function lockShell(...kids){
   const L = $("lockScr"); L.hidden = false; L.replaceChildren(
@@ -2370,13 +2370,19 @@ function showQuickUnlock(next){
   const bio = getCred() ? el("button",{class:"btn", type:"button", text:"Entrar com a digital", onclick:async ()=>{
     err.hidden = true;
     try{ await bioCheck(); unlocked = true; next(); }
-    catch(_){ err.textContent = "Não deu para usar a digital agora. Use a senha."; err.hidden = false; }
+    catch(_){ err.textContent = "Não deu para usar a digital agora. Entre com a senha; depois, em Ajustes, dá para cadastrar a digital de novo."; err.hidden = false; }
   }}) : null;
+  /* aparelho ainda sem digital cadastrada: a opção aparece mesmo assim e explica o caminho (a senha uma vez, depois só o dedo) */
+  const bioNew = bio ? null : el("button",{class:"btn", type:"button", text:"Usar a digital", hidden:true, onclick:()=>{
+    try{ localStorage.removeItem("pm-bio-pular-" + (meMember?.fid || "")); }catch(_){}
+    err.textContent = "Para ligar a digital neste aparelho, digite a senha só desta vez. Logo depois o celular pede o seu dedo."; err.hidden = false; pw.focus();
+  }});
+  if (bioNew) bioAvailable().then(ok=>{ if (ok) bioNew.hidden = false; });
   lockShell(
     el("h2",{text:"Entrar"}),
     el("p",{class:"hint", text:"Olá, " + first(meMember?.nome) + "! Digite sua senha para entrar."}),
     pw, err,
-    el("div",{class:"row", style:"justify-content:center"}, btn, bio),
+    el("div",{class:"row", style:"justify-content:center"}, btn, bio, bioNew),
     el("div",{class:"row", style:"justify-content:center;gap:16px"},
       el("button",{class:"del", type:"button", text:"Esqueci a senha", onclick:()=>showForgot(meMember?.email)}),
       el("button",{class:"del", type:"button", text:"Outra conta", onclick:signOut})));
@@ -2545,7 +2551,7 @@ function showLogin(email){
     btn.disabled = true; btn.textContent = "Entrando…";
     try{
       const d = await q(sb.auth.signInWithPassword({email: e, password: pw.value}));
-      authUser = d.user; unlocked = true; await afterLogin(true); return;
+      authUser = d.user; unlocked = true; bioAsk = true; await afterLogin(true); return;
     }catch(x){ err.textContent = explain(x); err.hidden = false; }
     btn.disabled = false; btn.textContent = "Entrar";
   };
@@ -3500,7 +3506,7 @@ async function afterLogin(fresh, isNew){
     if (isNew){
       const afterBio = ()=>offerBio(()=>{ next(); bdWelcome(); });
       if (mode === "drive") showCoverPicker(afterBio); else afterBio();
-    } else if (bioAsk && !sharePending){ bioAsk = false; offerBio(()=>{ next(); if (!needBaby) bdWelcome(); }); }
+    } else if (bioAsk && !bioSkipped() && !sharePending){ bioAsk = false; offerBio(()=>{ next(); if (!needBaby) bdWelcome(); }); }
     else { bioAsk = false; next(); if (!needBaby) setTimeout(()=> sharePending ? handleShared() : bdWelcome(), 400); }
   }catch(err){ showOffline(explain(err)); }
 }

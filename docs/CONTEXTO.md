@@ -22,7 +22,7 @@
 | Bom dia da mãe | Mensagem às 9h, só para a Thaís, da gestação inteira até 3 meses depois do parto. Tem versos, frases, a "voz" da bebê e dicas com fonte. A primeira aparece no login, depois o app pede permissão, e ela pode cancelar quando quiser |
 | Calendário | Depois do nascimento, vacinas e consultas viram arquivo .ics com alarme (e links para o Google Agenda) |
 | Segurança | Senha ou digital ao abrir, mas fica destravado por 30 minutos de uso. O botão Voltar fecha a janela, a foto ou o álbum e volta ao Diário; só sai do app no segundo toque |
-| Visitantes | Só veem: sem baixar, com marca-d'água, sem Pré-natal |
+| Visitantes | Só veem: sem baixar, sem Pré-natal, com marca-d'água (nome completo do visitante e a data do dia) |
 
 ## Decisões tomadas (não desfazer sem o Fabio pedir)
 
@@ -35,6 +35,9 @@
 - **Pré-natal desligado** (11/2026), para a versão de teste em família e a comercial: `const PRENATAL = false` no index.html. Os registros antigos continuam no banco.
 - **Capa do álbum** escolhida pela família ("Escolher capa" dentro do álbum); sem escolha, é a primeira foto.
 - **Hospedagem trocada do Netlify para o Cloudflare Pages** (11/2026): no Netlify grátis cada publicação gastava créditos e eles acabaram. Endereço novo: https://bebe-a-caminho.pages.dev. Ideia: registrar um domínio próprio (.com.br) antes de vender, para o endereço nunca mais mudar.
+
+- **Versão no rodapé** ("Versão 1.1", 13/11/2026): aumente o número a cada publicação, para o Fabio conferir no celular se a versão nova entrou.
+- **Álbum com 2 fotos por linha** (fotos maiores) e marca-d'água só com nome e data, sem "Só visualização" (13/11/2026).
 
 ## Problemas que já apareceram (para não voltarem)
 
@@ -49,6 +52,9 @@
   - O app lia só 15 páginas.
   - Nomes em maiúsculas com espaçamento quebrado não eram reconhecidos.
   - Depois de ler, o Guia do pré-natal se fechava e parecia que a lista tinha sumido.
+- **Digital que não aparecia (13/11/2026):** quem entrava pela tela de login (e-mail e senha, por exemplo no endereço novo) nunca recebia a oferta
+  de cadastrar a digital, e a tela de entrar não mostrava nada sobre a digital enquanto o aparelho não tinha cadastro. Agora o login oferece cadastrar
+  e a tela de entrar mostra "Usar a digital" (pede a senha uma vez). A digital vale por aparelho e por endereço do app: trocou de celular ou de endereço, cadastra de novo.
 - **Bom dia:** quando um envio falhava, o registro de "já enviado" travava as próximas tentativas. Agora ele é apagado quando falha.
 
 ## Em aberto ou não testado em celular de verdade

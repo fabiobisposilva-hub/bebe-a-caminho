@@ -67,6 +67,9 @@
 
 ## Como publicar uma versão nova
 
-- Basta juntar (merge) na branch `main`. O Cloudflare Pages publica sozinho em cerca de 1 minuto (veja em **Workers & Pages → bebe-a-caminho → Deployments**).
+- **Hoje (12/11/2026) o projeto do Cloudflare foi criado por envio direto (Direct Upload), sem ligação com o GitHub.** O merge na `main` NÃO publica sozinho.
+  Para publicar: compacte o **conteúdo** da pasta `app/` (o Claude manda o .zip pronto), descompacte e envie em
+  **Workers & Pages → bebe-a-caminho → Create deployment** (ou Deployments → Upload).
+- O token de API do Cloudflare (para publicar direto pela sessão) foi tentado e recusado (formato inválido); fica para depois.
 - Para voltar uma versão: em **Deployments**, nos três pontinhos de uma publicação antiga → **Rollback to this deployment**.
 - **Depois de publicar:** no celular, puxe a tela para baixo ou feche e abra o app.

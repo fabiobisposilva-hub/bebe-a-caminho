@@ -927,8 +927,41 @@ function run(name, startUser, url, steps, prep){
     assert(!b || b.hidden, "sem leitor, sem botão");
   });
 
+  await run("digital: aparelho com digital pede a digital toda vez que abre, mesmo dentro dos 30 minutos", "fabio@x.com", null, async ({w, L, btn, wait, assert})=>{
+    await wait(600);
+    assert(w.__bio.get >= 1 && L().hidden, "pediu a digital sozinho e entrou");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID", "pm-uso": ()=>String(Date.now() - 2 * 60000)}; db.__win = BIO(); });
+
+  await run("digital: dentro dos 30 minutos, se o celular não liberar, a tela de entrar fica com a digital em destaque", "fabio@x.com", null, async ({w, L, btn, wait, assert})=>{
+    await wait(600);
+    assert(!L().hidden && btn("Entrar com a digital"), "tela de entrar com o botão da digital");
+    assert(L().textContent.includes("Encoste o dedo"), "texto fala da digital");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID", "pm-uso": ()=>String(Date.now() - 2 * 60000)}; db.__win = BIO(false); });
+
+  await run("digital: Sair num aparelho com digital só trava; a tela inicial volta com a digital e sem sair da conta", "fabio@x.com", null, async ({w, db, L, btn, view, wait, assert})=>{
+    await wait(600);
+    assert(L().hidden, "entrou com a digital");
+    const antes = w.__bio.get;
+    w.document.getElementById("openSettings").click(); await wait(100);
+    btn("Sair").click(); await wait(100);
+    assert(!L().hidden && btn("Entrar com a digital") && btn("Outra conta"), "tela de entrar com digital e Outra conta");
+    await wait(600);
+    assert(w.__bio.get > antes && L().hidden && view("view-tl").includes("Ultrassom 3D"), "a digital abre o app de novo");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID"}; db.__win = BIO(); });
+
+  await run("digital: voltar ao app depois de 30 min parado trava de novo e pede a digital", "fabio@x.com", null, async ({w, L, btn, wait, assert})=>{
+    await wait(600);
+    assert(L().hidden, "entrou com a digital");
+    const antes = w.__bio.get;
+    w.localStorage.setItem("pm-uso", String(Date.now() - 31 * 60000));
+    w.document.dispatchEvent(new w.Event("visibilitychange")); await wait(100);
+    assert(!L().hidden && btn("Entrar com a digital"), "travou ao voltar");
+    await wait(600);
+    assert(w.__bio.get > antes && L().hidden, "a digital destrava");
+  }, db=>{ db.__ls = {"pm-cred-u-fabio":"AQID"}; db.__win = BIO(); });
+
   await run("rodapé mostra a versão publicada", "fabio@x.com", null, async ({w, assert})=>{
-    assert(w.document.querySelector("footer.credits").textContent.includes("Versão 1.1"), "Versão 1.1 no rodapé");
+    assert(w.document.querySelector("footer.credits").textContent.includes("Versão 1.2"), "Versão 1.2 no rodapé");
   });
 
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{

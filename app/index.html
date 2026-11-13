@@ -305,7 +305,7 @@ a.btn{display:block;text-align:center;text-decoration:none}
   <footer class="credits">
     <div class="credits-name">BeBê a CaMinHo</div>
     <div>Desenvolvido por <strong>Fabio Bispo</strong></div>
-    <div>Criado em 1º de novembro de 2026 · Versão 1.1</div>
+    <div>Criado em 1º de novembro de 2026 · Versão 1.2</div>
     <div>© 2026 Fabio Bispo. Todos os direitos reservados.</div>
     <div><button class="del" type="button" id="privLink" style="align-self:center">Política de Privacidade</button></div>
   </footer>
@@ -2269,7 +2269,7 @@ function famBox(){
     el("button",{class:"btn rose", type:"button", text:"Convidar responsável", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("responsavel"); }catch(e){ setStatus("warn", explain(e)); } }}),
     el("button",{class:"btn", type:"button", text:"Convidar visitantes", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("visitante"); }catch(e){ setStatus("warn", explain(e)); } }})));
   const bioBtn = el("button",{class:"btn ghost", type:"button", text:"Digital neste aparelho", hidden:true, onclick:async ()=>{
-    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Na próxima vez que abrir o app, é só encostar o dedo."); }
+    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Toda vez que abrir o app, é só encostar o dedo."); }
     catch(e){ bioBtn.textContent = "Tentar a digital de novo"; setStatus("warn", e?.name === "NotAllowedError" ? "O cadastro da digital foi cancelado. Toque de novo em Ajustes → Tentar a digital de novo." : "Este celular não liberou a digital aqui. Abra o app pelo ícone instalado pelo Chrome e tente de novo."); }
   }});
   /* mesmo já cadastrada, dá para cadastrar de novo (ex.: trocou de celular, limpou os dados ou mudou o endereço do app) */
@@ -2284,7 +2284,8 @@ function famBox(){
     el("button",{class:"btn ghost", type:"button", text:"Criar outra família", onclick:()=>{ $("setDlg").close(); showCreateFamily(); }}),
     el("button",{class:"btn ghost", type:"button", text:"Tenho um convite", onclick:()=>{ $("setDlg").close(); showInviteCode(); }}),
     el("button",{class:"btn ghost", type:"button", text:"Política de Privacidade", onclick:()=>{ $("setDlg").close(); openPrivacy(); }}),
-    el("button",{class:"btn ghost", type:"button", text:"Sair", onclick:signOut})));
+    /* aparelho com digital: Sair só trava, e a tela inicial continua oferecendo a digital ("Outra conta" sai de verdade) */
+    el("button",{class:"btn ghost", type:"button", text:"Sair", onclick:()=>{ if (getCred()){ $("setDlg").close(); lockNow(); } else signOut(); }})));
 }
 
 /* ---------- Senha (conta) e digital (por aparelho) ---------- */
@@ -2293,7 +2294,12 @@ let unlocked = false, afterLockSetup = null;
 const UNLOCK_MIN = 30;
 function markUse(){ if (unlocked && appOpened){ try{ localStorage.setItem("pm-uso", String(Date.now())); }catch(_){} } }
 function recentUse(){ try{ const t = +localStorage.getItem("pm-uso"); return t > 0 && Date.now() - t < UNLOCK_MIN * 60000; }catch(_){ return false; } }
-document.addEventListener("visibilitychange", ()=>{ if (document.hidden) markUse(); });
+document.addEventListener("visibilitychange", ()=>{ if (document.hidden) markUse(); else if (appOpened && unlocked && !recentUse()) lockNow(); });
+/* Trava o app sem sair da conta: a tela de entrar volta, com a digital (se cadastrada) ou a senha */
+function lockNow(){
+  unlocked = false; try{ localStorage.removeItem("pm-uso"); }catch(_){}
+  showQuickUnlock(()=>afterLogin(true));
+}
 window.addEventListener("pagehide", markUse);
 document.addEventListener("pointerdown", ()=>{ markUse(); }, {passive:true});
 const b64u = u8=>btoa(String.fromCharCode(...u8));
@@ -2365,9 +2371,9 @@ function showQuickUnlock(next){
     catch(e){ err.textContent = explain(e); err.hidden = false; pw.select(); }
     btn.disabled = false; btn.textContent = "Entrar";
   };
-  const btn = el("button",{class:"btn rose", type:"button", text:"Entrar", onclick:go});
+  const btn = el("button",{class:"btn" + (getCred() ? "" : " rose"), type:"button", text:"Entrar", onclick:go});
   pw.addEventListener("keydown", e=>{ if (e.key === "Enter") go(); });
-  const bio = getCred() ? el("button",{class:"btn", type:"button", text:"Entrar com a digital", onclick:async ()=>{
+  const bio = getCred() ? el("button",{class:"btn rose", type:"button", text:"Entrar com a digital", onclick:async ()=>{
     err.hidden = true;
     try{ await bioCheck(); unlocked = true; next(); }
     catch(_){ err.textContent = "Não deu para usar a digital agora. Entre com a senha; depois, em Ajustes, dá para cadastrar a digital de novo."; err.hidden = false; }
@@ -2380,9 +2386,10 @@ function showQuickUnlock(next){
   if (bioNew) bioAvailable().then(ok=>{ if (ok) bioNew.hidden = false; });
   lockShell(
     el("h2",{text:"Entrar"}),
-    el("p",{class:"hint", text:"Olá, " + first(meMember?.nome) + "! Digite sua senha para entrar."}),
+    el("p",{class:"hint", text:"Olá, " + first(meMember?.nome) + (bio ? "! Encoste o dedo no leitor ou digite sua senha." : "! Digite sua senha para entrar.")}),
+    bio ? el("div",{class:"row", style:"justify-content:center"}, bio) : null,
     pw, err,
-    el("div",{class:"row", style:"justify-content:center"}, btn, bio, bioNew),
+    el("div",{class:"row", style:"justify-content:center"}, btn, bioNew),
     el("div",{class:"row", style:"justify-content:center;gap:16px"},
       el("button",{class:"del", type:"button", text:"Esqueci a senha", onclick:()=>showForgot(meMember?.email)}),
       el("button",{class:"del", type:"button", text:"Outra conta", onclick:signOut})));
@@ -3485,7 +3492,7 @@ async function afterLogin(fresh, isNew){
     await loadMemberships();
     const ok = families.filter(f=>f.status === "aprovado");
     if (!ok.length){ toExample(""); showNoFamily(invErr); return; }
-    if (!fresh && !unlocked && !recentUse()){ showQuickUnlock(()=>afterLogin(true)); return; }
+    if (!fresh && !unlocked && (getCred() || !recentUse())){ showQuickUnlock(()=>afterLogin(true)); return; }
     let want = null; try{ want = localStorage.getItem("pm-fam"); }catch(_){}
     const cur = ok.find(f=>f.familia_id === want) || ok.find(f=>f.papel === "responsavel") || ok[0];
     famId = cur.familia_id; try{ localStorage.setItem("pm-fam", famId); }catch(_){}

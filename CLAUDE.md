@@ -16,7 +16,8 @@ Leia também `docs/CONTEXTO.md`, que conta o que já foi feito, as decisões tom
 - **Supabase** (projeto `bzauxpdymyegjsmvjjmb`): Postgres com RLS, login por e-mail e senha,
   Storage no bucket `fotos` (`<familia_id>/<pasta>/<uuid>.jpg|pdf`), Edge Function `bom-dia`, pg_cron às 12:00 UTC (9h em Brasília).
   A chave publishable no index.html é pública por natureza; segredos nunca vão para o código.
-- **Cloudflare Pages:** publica a pasta `app/` sozinho a cada merge na `main` (sem build). Site: https://bebe-a-caminho.pages.dev
+- **Cloudflare Pages:** publica a pasta `app/` (sem build). Site: https://bebe-a-caminho.pages.dev
+  Hoje é por envio direto (Direct Upload): o merge não publica sozinho; mande ao Fabio um .zip com o conteúdo de `app/` (veja `docs/CONTEXTO.md`).
   (Até 11/2026 era o Netlify, em https://bb-a-caminho.netlify.app; saiu porque os créditos grátis acabavam.)
 
 ## Pastas

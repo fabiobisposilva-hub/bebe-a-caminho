@@ -68,7 +68,7 @@ nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .story.year{background:var(--rose-soft)}
 .story h3{margin:0;font-size:16px}
 .story p{margin:0;line-height:1.5}
-.story .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.story .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .story .strip .sth,#storyBody .strip .sth{aspect-ratio:1;border-radius:10px;background:var(--line) center/cover no-repeat;border:0;padding:0;cursor:zoom-in}
 #storyBody{display:flex;flex-direction:column;gap:12px;max-height:65vh;overflow:auto}
 #storyBody p{margin:0;line-height:1.6}
@@ -171,7 +171,7 @@ body.has-cover #bgPhoto{opacity:.13}
 .albmeta{padding:8px 10px;display:flex;flex-direction:column;min-width:0}
 .albmeta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .albmeta small{color:var(--muted);font-size:12px}
-.photogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.photogrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 /* ícones das abas */
 nav.tabs button{display:inline-flex;align-items:center;gap:6px}
 nav.tabs button svg{width:18px;height:18px;flex:none}
@@ -188,10 +188,12 @@ nav.tabs button svg{width:18px;height:18px;flex:none}
 body.visit img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:none}
 body.visit .ph,body.visit .card,body.visit .albcard{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 body.visit .ph{position:relative}
-body.visit .ph::after{content:var(--wm);position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:11px;font-weight:700;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:none;padding:0 4px}
+body.visit .ph::after{content:var(--wm);position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:none;padding:0 4px}
 body.hideph .ph img,body.hideph #lbImg{filter:blur(24px)}
 .wm{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:flex;flex-direction:column;justify-content:space-around;align-items:center}
-.wm span{transform:rotate(-28deg);font-size:20px;font-weight:700;color:rgba(255,255,255,.28);white-space:nowrap}
+.wm span{transform:rotate(-28deg);font-size:20px;font-weight:700;color:rgba(255,255,255,.34);text-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap}
+body.visit .sth{position:relative;overflow:hidden}
+body.visit .sth::after{content:var(--wm);position:absolute;left:0;right:0;bottom:3px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.8);white-space:nowrap;pointer-events:none}
 .pgh{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .pgh:first-child{margin-top:0}
 .pgh b{font-family:var(--font-display);font-size:16px}
@@ -303,7 +305,7 @@ a.btn{display:block;text-align:center;text-decoration:none}
   <footer class="credits">
     <div class="credits-name">BeBê a CaMinHo</div>
     <div>Desenvolvido por <strong>Fabio Bispo</strong></div>
-    <div>Criado em 1º de novembro de 2026 · Versão 1.0</div>
+    <div>Criado em 1º de novembro de 2026 · Versão 1.2</div>
     <div>© 2026 Fabio Bispo. Todos os direitos reservados.</div>
     <div><button class="del" type="button" id="privLink" style="align-self:center">Política de Privacidade</button></div>
   </footer>
@@ -752,7 +754,7 @@ function render(){
   iconTabs();
   $("tab-ft").hidden = !visit; $("tab-ft").querySelector("span").textContent = "Álbuns";
   document.body.classList.toggle("visit", visit);
-  if (visit) document.body.style.setProperty("--wm", JSON.stringify("Só visualização · " + (first(meMember?.nome) || "visitante")));
+  if (visit) document.body.style.setProperty("--wm", JSON.stringify(wmText()));
   $("openSettings").hidden = visit;
   if (visit && tab !== "tl" && tab !== "ft") tab = "tl";
   renderNotices();
@@ -2267,7 +2269,7 @@ function famBox(){
     el("button",{class:"btn rose", type:"button", text:"Convidar responsável", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("responsavel"); }catch(e){ setStatus("warn", explain(e)); } }}),
     el("button",{class:"btn", type:"button", text:"Convidar visitantes", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("visitante"); }catch(e){ setStatus("warn", explain(e)); } }})));
   const bioBtn = el("button",{class:"btn ghost", type:"button", text:"Digital neste aparelho", hidden:true, onclick:async ()=>{
-    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Na próxima vez que abrir o app, é só encostar o dedo."); }
+    try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Toda vez que abrir o app, é só encostar o dedo."); }
     catch(e){ bioBtn.textContent = "Tentar a digital de novo"; setStatus("warn", e?.name === "NotAllowedError" ? "O cadastro da digital foi cancelado. Toque de novo em Ajustes → Tentar a digital de novo." : "Este celular não liberou a digital aqui. Abra o app pelo ícone instalado pelo Chrome e tente de novo."); }
   }});
   /* mesmo já cadastrada, dá para cadastrar de novo (ex.: trocou de celular, limpou os dados ou mudou o endereço do app) */
@@ -2282,7 +2284,8 @@ function famBox(){
     el("button",{class:"btn ghost", type:"button", text:"Criar outra família", onclick:()=>{ $("setDlg").close(); showCreateFamily(); }}),
     el("button",{class:"btn ghost", type:"button", text:"Tenho um convite", onclick:()=>{ $("setDlg").close(); showInviteCode(); }}),
     el("button",{class:"btn ghost", type:"button", text:"Política de Privacidade", onclick:()=>{ $("setDlg").close(); openPrivacy(); }}),
-    el("button",{class:"btn ghost", type:"button", text:"Sair", onclick:signOut})));
+    /* aparelho com digital: Sair só trava, e a tela inicial continua oferecendo a digital ("Outra conta" sai de verdade) */
+    el("button",{class:"btn ghost", type:"button", text:"Sair", onclick:()=>{ if (getCred()){ $("setDlg").close(); lockNow(); } else signOut(); }})));
 }
 
 /* ---------- Senha (conta) e digital (por aparelho) ---------- */
@@ -2291,7 +2294,12 @@ let unlocked = false, afterLockSetup = null;
 const UNLOCK_MIN = 30;
 function markUse(){ if (unlocked && appOpened){ try{ localStorage.setItem("pm-uso", String(Date.now())); }catch(_){} } }
 function recentUse(){ try{ const t = +localStorage.getItem("pm-uso"); return t > 0 && Date.now() - t < UNLOCK_MIN * 60000; }catch(_){ return false; } }
-document.addEventListener("visibilitychange", ()=>{ if (document.hidden) markUse(); });
+document.addEventListener("visibilitychange", ()=>{ if (document.hidden) markUse(); else if (appOpened && unlocked && !recentUse()) lockNow(); });
+/* Trava o app sem sair da conta: a tela de entrar volta, com a digital (se cadastrada) ou a senha */
+function lockNow(){
+  unlocked = false; try{ localStorage.removeItem("pm-uso"); }catch(_){}
+  showQuickUnlock(()=>afterLogin(true));
+}
 window.addEventListener("pagehide", markUse);
 document.addEventListener("pointerdown", ()=>{ markUse(); }, {passive:true});
 const b64u = u8=>btoa(String.fromCharCode(...u8));
@@ -2311,7 +2319,7 @@ async function bioRegister(){
 }
 async function bioCheck(){
   const id = getCred(); if (!id) throw new Error("sem digital");
-  await navigator.credentials.get({publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials:[{type:"public-key", id:unb64(id)}], userVerification:"required", timeout:60000}});
+  await navigator.credentials.get({publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials:[{type:"public-key", id:unb64(id), transports:["internal"]}], userVerification:"required", timeout:60000}});
 }
 function lockShell(...kids){
   const L = $("lockScr"); L.hidden = false; L.replaceChildren(
@@ -2363,18 +2371,25 @@ function showQuickUnlock(next){
     catch(e){ err.textContent = explain(e); err.hidden = false; pw.select(); }
     btn.disabled = false; btn.textContent = "Entrar";
   };
-  const btn = el("button",{class:"btn rose", type:"button", text:"Entrar", onclick:go});
+  const btn = el("button",{class:"btn" + (getCred() ? "" : " rose"), type:"button", text:"Entrar", onclick:go});
   pw.addEventListener("keydown", e=>{ if (e.key === "Enter") go(); });
-  const bio = getCred() ? el("button",{class:"btn", type:"button", text:"Entrar com a digital", onclick:async ()=>{
+  const bio = getCred() ? el("button",{class:"btn rose", type:"button", text:"Entrar com a digital", onclick:async ()=>{
     err.hidden = true;
     try{ await bioCheck(); unlocked = true; next(); }
-    catch(_){ err.textContent = "Não deu para usar a digital agora. Use a senha."; err.hidden = false; }
+    catch(_){ err.textContent = "Não deu para usar a digital agora. Entre com a senha; depois, em Ajustes, dá para cadastrar a digital de novo."; err.hidden = false; }
   }}) : null;
+  /* aparelho ainda sem digital cadastrada: a opção aparece mesmo assim e explica o caminho (a senha uma vez, depois só o dedo) */
+  const bioNew = bio ? null : el("button",{class:"btn", type:"button", text:"Usar a digital", hidden:true, onclick:()=>{
+    try{ localStorage.removeItem("pm-bio-pular-" + (meMember?.fid || "")); }catch(_){}
+    err.textContent = "Para ligar a digital neste aparelho, digite a senha só desta vez. Logo depois o celular pede o seu dedo."; err.hidden = false; pw.focus();
+  }});
+  if (bioNew) bioAvailable().then(ok=>{ if (ok) bioNew.hidden = false; });
   lockShell(
     el("h2",{text:"Entrar"}),
-    el("p",{class:"hint", text:"Olá, " + first(meMember?.nome) + "! Digite sua senha para entrar."}),
+    el("p",{class:"hint", text:"Olá, " + first(meMember?.nome) + (bio ? "! Encoste o dedo no leitor ou digite sua senha." : "! Digite sua senha para entrar.")}),
+    bio ? el("div",{class:"row", style:"justify-content:center"}, bio) : null,
     pw, err,
-    el("div",{class:"row", style:"justify-content:center"}, btn, bio),
+    el("div",{class:"row", style:"justify-content:center"}, btn, bioNew),
     el("div",{class:"row", style:"justify-content:center;gap:16px"},
       el("button",{class:"del", type:"button", text:"Esqueci a senha", onclick:()=>showForgot(meMember?.email)}),
       el("button",{class:"del", type:"button", text:"Outra conta", onclick:signOut})));
@@ -2543,7 +2558,7 @@ function showLogin(email){
     btn.disabled = true; btn.textContent = "Entrando…";
     try{
       const d = await q(sb.auth.signInWithPassword({email: e, password: pw.value}));
-      authUser = d.user; unlocked = true; await afterLogin(true); return;
+      authUser = d.user; unlocked = true; bioAsk = true; await afterLogin(true); return;
     }catch(x){ err.textContent = explain(x); err.hidden = false; }
     btn.disabled = false; btn.textContent = "Entrar";
   };
@@ -2935,12 +2950,14 @@ $("lbClose").addEventListener("click", ()=>{ $("lbox").hidden = true; });
 /* Só os responsáveis baixam fotos. Visitantes: sem botão, sem "salvar imagem" no toque longo e com marca-d'água.
    Print da tela não tem como ser bloqueado por um site; a marca-d'água identifica quem tirou. */
 let lbName = "";
+/* Marca-d'água do visitante: nome completo e a data de hoje, para que todo print mostre quem viu e quando */
+function wmText(){ return ((meMember?.nome || "").trim() || "visitante") + " · " + short(toISO(new Date())); }
 function lbProtect(nome){
   lbName = nome || "";
   $("lbDl").hidden = mode !== "drive";
   const wm = $("lbWm"), vis = mode === "visit";
   wm.hidden = !vis;
-  if (vis){ const t = "Só visualização · " + (first(meMember?.nome) || "visitante") + " · BeBê a CaMinHo"; wm.replaceChildren(...Array.from({length:6}, ()=>el("span",{text:t}))); }
+  if (vis){ const t = wmText(); wm.replaceChildren(...Array.from({length:6}, ()=>el("span",{text:t}))); }
 }
 $("lbDl").addEventListener("click", ()=>{
   if (mode !== "drive") return;
@@ -3475,7 +3492,7 @@ async function afterLogin(fresh, isNew){
     await loadMemberships();
     const ok = families.filter(f=>f.status === "aprovado");
     if (!ok.length){ toExample(""); showNoFamily(invErr); return; }
-    if (!fresh && !unlocked && !recentUse()){ showQuickUnlock(()=>afterLogin(true)); return; }
+    if (!fresh && !unlocked && (getCred() || !recentUse())){ showQuickUnlock(()=>afterLogin(true)); return; }
     let want = null; try{ want = localStorage.getItem("pm-fam"); }catch(_){}
     const cur = ok.find(f=>f.familia_id === want) || ok.find(f=>f.papel === "responsavel") || ok[0];
     famId = cur.familia_id; try{ localStorage.setItem("pm-fam", famId); }catch(_){}
@@ -3496,7 +3513,7 @@ async function afterLogin(fresh, isNew){
     if (isNew){
       const afterBio = ()=>offerBio(()=>{ next(); bdWelcome(); });
       if (mode === "drive") showCoverPicker(afterBio); else afterBio();
-    } else if (bioAsk && !sharePending){ bioAsk = false; offerBio(()=>{ next(); if (!needBaby) bdWelcome(); }); }
+    } else if (bioAsk && !bioSkipped() && !sharePending){ bioAsk = false; offerBio(()=>{ next(); if (!needBaby) bdWelcome(); }); }
     else { bioAsk = false; next(); if (!needBaby) setTimeout(()=> sharePending ? handleShared() : bdWelcome(), 400); }
   }catch(err){ showOffline(explain(err)); }
 }

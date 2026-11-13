@@ -68,7 +68,7 @@ nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .story.year{background:var(--rose-soft)}
 .story h3{margin:0;font-size:16px}
 .story p{margin:0;line-height:1.5}
-.story .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.story .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .story .strip .sth,#storyBody .strip .sth{aspect-ratio:1;border-radius:10px;background:var(--line) center/cover no-repeat;border:0;padding:0;cursor:zoom-in}
 #storyBody{display:flex;flex-direction:column;gap:12px;max-height:65vh;overflow:auto}
 #storyBody p{margin:0;line-height:1.6}
@@ -171,7 +171,7 @@ body.has-cover #bgPhoto{opacity:.13}
 .albmeta{padding:8px 10px;display:flex;flex-direction:column;min-width:0}
 .albmeta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .albmeta small{color:var(--muted);font-size:12px}
-.photogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.photogrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 /* ícones das abas */
 nav.tabs button{display:inline-flex;align-items:center;gap:6px}
 nav.tabs button svg{width:18px;height:18px;flex:none}
@@ -188,10 +188,12 @@ nav.tabs button svg{width:18px;height:18px;flex:none}
 body.visit img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:none}
 body.visit .ph,body.visit .card,body.visit .albcard{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 body.visit .ph{position:relative}
-body.visit .ph::after{content:var(--wm);position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:11px;font-weight:700;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:none;padding:0 4px}
+body.visit .ph::after{content:var(--wm);position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:none;padding:0 4px}
 body.hideph .ph img,body.hideph #lbImg{filter:blur(24px)}
 .wm{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:flex;flex-direction:column;justify-content:space-around;align-items:center}
-.wm span{transform:rotate(-28deg);font-size:20px;font-weight:700;color:rgba(255,255,255,.28);white-space:nowrap}
+.wm span{transform:rotate(-28deg);font-size:20px;font-weight:700;color:rgba(255,255,255,.34);text-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap}
+body.visit .sth{position:relative;overflow:hidden}
+body.visit .sth::after{content:var(--wm);position:absolute;left:0;right:0;bottom:3px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.8);white-space:nowrap;pointer-events:none}
 .pgh{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .pgh:first-child{margin-top:0}
 .pgh b{font-family:var(--font-display);font-size:16px}
@@ -752,7 +754,7 @@ function render(){
   iconTabs();
   $("tab-ft").hidden = !visit; $("tab-ft").querySelector("span").textContent = "Álbuns";
   document.body.classList.toggle("visit", visit);
-  if (visit) document.body.style.setProperty("--wm", JSON.stringify("Só visualização · " + (first(meMember?.nome) || "visitante")));
+  if (visit) document.body.style.setProperty("--wm", JSON.stringify(wmText()));
   $("openSettings").hidden = visit;
   if (visit && tab !== "tl" && tab !== "ft") tab = "tl";
   renderNotices();
@@ -2935,12 +2937,14 @@ $("lbClose").addEventListener("click", ()=>{ $("lbox").hidden = true; });
 /* Só os responsáveis baixam fotos. Visitantes: sem botão, sem "salvar imagem" no toque longo e com marca-d'água.
    Print da tela não tem como ser bloqueado por um site; a marca-d'água identifica quem tirou. */
 let lbName = "";
+/* Marca-d'água do visitante: nome completo e a data de hoje, para que todo print mostre quem viu e quando */
+function wmText(){ return ((meMember?.nome || "").trim() || "visitante") + " · " + short(toISO(new Date())); }
 function lbProtect(nome){
   lbName = nome || "";
   $("lbDl").hidden = mode !== "drive";
   const wm = $("lbWm"), vis = mode === "visit";
   wm.hidden = !vis;
-  if (vis){ const t = "Só visualização · " + (first(meMember?.nome) || "visitante") + " · BeBê a CaMinHo"; wm.replaceChildren(...Array.from({length:6}, ()=>el("span",{text:t}))); }
+  if (vis){ const t = wmText(); wm.replaceChildren(...Array.from({length:6}, ()=>el("span",{text:t}))); }
 }
 $("lbDl").addEventListener("click", ()=>{
   if (mode !== "drive") return;

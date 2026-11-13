@@ -458,7 +458,13 @@ function run(name, startUser, url, steps, prep){
     [...w.document.querySelectorAll(".albcard")][0].click(); await wait(100);
     w.document.querySelector(".photogrid button.ph").click(); await wait(100);
     assert(w.document.getElementById("lbDl").hidden, "visitante sem Baixar");
-    assert(!w.document.getElementById("lbWm").hidden && w.document.getElementById("lbWm").textContent.includes("Só visualização · Ana"), "marca-d'água com o nome");
+    assert(!w.document.getElementById("lbWm").hidden && w.document.getElementById("lbWm").textContent.includes("Ana Souza"), "marca-d'água com o nome");
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    assert(w.document.getElementById("lbWm").textContent.includes("Ana Souza · " + hoje), "marca-d'água da foto aberta com nome completo e data de hoje");
+    assert(w.document.body.style.getPropertyValue("--wm").includes("Ana Souza · " + hoje), "miniaturas com nome completo e data de hoje");
+    assert(!w.document.getElementById("lbWm").textContent.includes("Só visualização") && !w.document.body.style.getPropertyValue("--wm").includes("Só visualização"), "sem o texto Só visualização, só nome e data");
+    const css = w.document.querySelector("style").textContent;
+    assert(css.includes(".photogrid{display:grid;grid-template-columns:repeat(2,"), "fotos maiores no álbum: 2 por linha");
     const ev = new w.MouseEvent("contextmenu", {bubbles:true, cancelable:true});
     w.document.getElementById("lbImg").dispatchEvent(ev);
     assert(ev.defaultPrevented, "toque longo/menu bloqueado");

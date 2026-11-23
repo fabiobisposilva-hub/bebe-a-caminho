@@ -1039,11 +1039,33 @@ function bomDiaCalendar(){
   saveIcs(evs, "bom-dia-" + slug(nomeMae).toLowerCase().replace(/\s+/g, "-") + ".ics");
   setStatus("ok", evs.length + " mensagens no arquivo baixado. Abra e toque em Adicionar: cada uma avisa às 9h." + (settings.nasc ? "" : " Depois do nascimento, o app oferece as dos 3 primeiros meses."));
 }
+/* Lista de presentes da família: um link (Amazon, loja…) que responsáveis e visitantes veem no Diário */
+function listaOk(u){ return /^https:\/\/[^\s]+$/i.test(String(u || "").trim()); }
+function presentesCard(v){
+  const u = curFamily()?.lista || "";
+  if ((mode !== "drive" && mode !== "visit") || !listaOk(u)) return;
+  const bebe = first(settings.nome) || "o bebê";
+  v.append(el("div",{class:"notice rose"},
+    el("div",{}, el("strong",{text:"🎁 Lista de presentinhos"}),
+      el("div",{class:"hint", text:"Quer mimar " + (settings.nome ? (settings.sexo === "M" ? "o " : settings.sexo === "F" ? "a " : "") + bebe : bebe) + "? Veja a lista que a família preparou."})),
+    el("div",{class:"row"}, el("a",{class:"btn rose", href:u.trim(), target:"_blank", rel:"noopener noreferrer", text:"Ver a lista de presentes"}))));
+}
+async function saveLista(inp, msg){
+  const u = inp.value.trim();
+  if (u && !listaOk(u)){ msg.textContent = "Cole o link completo, começando com https://"; msg.hidden = false; return; }
+  try{
+    await q(sb.from("familias").update({lista_presentes: u || null}).eq("id", famId));
+    const f = curFamily(); if (f) f.lista = u;
+    msg.textContent = u ? "Lista salva. Todos da família já veem no Diário." : "Lista removida."; msg.hidden = false;
+    render();
+  }catch(e){ msg.textContent = /lista_presentes/.test(e?.message || "") ? "Falta rodar o SQL 06 no Supabase." : explain(e); msg.hidden = false; }
+}
 function renderTimeline(){
   const v = $("view-tl"); v.replaceChildren();
   if (mode === "drive") bomDiaCard(v);
   const list = sorted();
   if (mode === "loading"){ v.append(el("div",{class:"empty"}, el("p",{text:"Carregando os registros…"}))); return; }
+  presentesCard(v);
   if (mode === "drive") v.append(el("div",{class:"notice photolink"},
     el("div",{}, el("strong",{text:"Fotos"}), el("div",{class:"hint", text:"Mande fotos soltas para o diário, ou organize em álbuns. Dica: na galeria ou no WhatsApp, selecione as fotos, toque em Compartilhar e escolha BeBê a CaMinHo: assim a data costuma vir certa."})),
     el("div",{class:"row"},
@@ -2146,8 +2168,8 @@ async function loadMembers(){
 async function loadMemberships(){
   const ms = await q(sb.from("membros").select("familia_id,papel,status").eq("user_id", authUser.id));
   const ids = ms.map(m=>m.familia_id);
-  const fs = ids.length ? await q(sb.from("familias").select("id,nome").in("id", ids)) : [];
-  families = ms.map(m=>Object.assign({}, m, {nome: (fs.find(f=>f.id === m.familia_id) || {}).nome || "Família"}));
+  const fs = ids.length ? await q(sb.from("familias").select("*").in("id", ids)) : [];
+  families = ms.map(m=>{ const f = fs.find(x=>x.id === m.familia_id) || {}; return Object.assign({}, m, {nome: f.nome || "Família", lista: f.lista_presentes || ""}); });
 }
 /* Membros da família atual (só o responsável vê): família, visitantes e pedidos */
 async function loadFamily(){
@@ -2268,6 +2290,13 @@ function famBox(){
   box.append(el("div",{class:"row", style:"margin-top:10px"},
     el("button",{class:"btn rose", type:"button", text:"Convidar responsável", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("responsavel"); }catch(e){ setStatus("warn", explain(e)); } }}),
     el("button",{class:"btn", type:"button", text:"Convidar visitantes", onclick:async ()=>{ $("setDlg").close(); try{ await createInvite("visitante"); }catch(e){ setStatus("warn", explain(e)); } }})));
+  { const inp = el("input",{id:"listaUrl", type:"url", inputmode:"url", placeholder:"https://… (link da lista)", value: curFamily()?.lista || ""});
+    const msg = el("small",{class:"hint", hidden:true});
+    box.append(el("div",{style:"font-weight:700;font-size:14px;margin:14px 0 6px", text:"🎁 Lista de presentes"}),
+      el("p",{class:"hint", style:"margin:0 0 6px", text:"Cole o link da lista (Amazon, loja…). Aparece no Diário para todos: responsáveis e visitantes."}),
+      inp, el("div",{class:"row", style:"margin-top:6px"},
+        el("button",{class:"btn", type:"button", text:"Salvar lista", onclick:()=>saveLista(inp, msg)}),
+        el("button",{class:"btn ghost", type:"button", text:"Remover", onclick:()=>{ inp.value = ""; saveLista(inp, msg); }})), msg); }
   const bioBtn = el("button",{class:"btn ghost", type:"button", text:"Digital neste aparelho", hidden:true, onclick:async ()=>{
     try{ await bioRegister(); bioBtn.textContent = "Digital cadastrada ✓"; setStatus("ok", "Digital cadastrada. Toda vez que abrir o app, é só encostar o dedo."); }
     catch(e){ bioBtn.textContent = "Tentar a digital de novo"; setStatus("warn", e?.name === "NotAllowedError" ? "O cadastro da digital foi cancelado. Toque de novo em Ajustes → Tentar a digital de novo." : "Este celular não liberou a digital aqui. Abra o app pelo ícone instalado pelo Chrome e tente de novo."); }

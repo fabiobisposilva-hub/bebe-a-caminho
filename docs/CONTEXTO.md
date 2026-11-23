@@ -61,6 +61,8 @@
 
 ## Em aberto ou não testado em celular de verdade
 
+- **Rodar o SQL 06** (`supabase/sql/06-lista-presentes.sql`) e colar o link da lista de presentes em **Ajustes → 🎁 Lista de presentes** (11/2026: lista da Amazon da Thaís).
+
 - **Rodar o SQL 05** (`supabase/sql/05-capa-album.sql`) no Supabase, para a capa do álbum funcionar.
 - Revisão de QA, celular e publicação em `docs/REVISAO-QA.md`, com o roteiro de teste em família e o que falta para vender.
 

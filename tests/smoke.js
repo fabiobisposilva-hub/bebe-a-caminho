@@ -553,7 +553,8 @@ function run(name, startUser, url, steps, prep){
     btn("Receber pelo calendário").click(); await wait(100);
     const ics = await new Promise(r=>{ const fr = new w.FileReader(); fr.onload = ()=>r(fr.result); fr.readAsText(blob); });
     const n = (ics.match(/BEGIN:VEVENT/g) || []).length;
-    assert(n >= 90 && ics.includes("T090000") && ics.includes("TRIGGER:PT0M") && ics.includes("DTSTART:20270211T090000") && !ics.includes("20270212T09"), "eventos: " + n);
+    const dias = Math.floor((Date.UTC(2027, 1, 11) - Date.now()) / 864e5); // de hoje até 2 semanas após a data provável
+    assert(n >= Math.min(90, dias) && ics.includes("T090000") && ics.includes("TRIGGER:PT0M") && ics.includes("DTSTART:20270211T090000") && !ics.includes("20270212T09"), "eventos: " + n);
   }, THAIS);
 
   await run("bom dia: o pai não vê o cartão nem o convite", "fabio@x.com", null, async ({w, view, wait, unlock, assert})=>{
@@ -963,6 +964,28 @@ function run(name, startUser, url, steps, prep){
   await run("rodapé mostra a versão publicada", "fabio@x.com", null, async ({w, assert})=>{
     assert(w.document.querySelector("footer.credits").textContent.includes("Versão 1.2"), "Versão 1.2 no rodapé");
   });
+
+  const LISTA = "https://www.amazon.com.br/baby-reg/thas-mendona-janeiro-2027-braslia/2EGA26JYYWJVZ";
+  await run("lista de presentes: responsável cola o link em Ajustes e aparece no Diário", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+    await unlock("segredo1");
+    assert(!view("view-tl").includes("Lista de presentinhos"), "sem link, sem cartão");
+    w.document.getElementById("openSettings").click(); await wait(100);
+    const inp = w.document.getElementById("listaUrl");
+    inp.value = "javascript:alert(1)"; btn("Salvar lista").click(); await wait(100);
+    assert(!db.familias[0].lista_presentes && w.document.getElementById("setDlg").textContent.includes("começando com https://"), "recusa link que não é https");
+    inp.value = "  " + LISTA + "  "; btn("Salvar lista").click(); await wait(150);
+    assert(db.familias[0].lista_presentes === LISTA, "link salvo na família");
+    w.document.getElementById("setDlg").close(); await wait(50);
+    const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
+    assert(view("view-tl").includes("Lista de presentinhos") && view("view-tl").includes("mimar a Maria") && a && a.href === LISTA && a.target === "_blank" && a.rel.includes("noopener"), "cartão no Diário abrindo a lista em outra janela");
+  });
+
+  await run("lista de presentes: visitante vê o cartão, sem poder mudar o link", null, null, async ({w, view, wait, login, assert})=>{
+    await login("ana@x.com", "segredo2");
+    const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
+    assert(a && a.href === LISTA && view("view-tl").includes("Lista de presentinhos"), "visitante vê a lista");
+    assert(w.document.getElementById("openSettings").hidden && !w.document.getElementById("listaUrl"), "visitante não edita");
+  }, db=>{ db.familias[0].lista_presentes = LISTA; });
 
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");

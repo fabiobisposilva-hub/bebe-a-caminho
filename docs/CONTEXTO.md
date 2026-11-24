@@ -39,6 +39,10 @@
 - **Versão no rodapé** ("Versão 1.2", 13/11/2026): aumente o número a cada publicação, para o Fabio conferir no celular se a versão nova entrou.
 - **Álbum com 2 fotos por linha** (fotos maiores) e marca-d'água só com nome e data, sem "Só visualização" (13/11/2026).
 
+- **Recados para o bebê** (11/2026): aba "Recados" para todos. É a única coisa que visitantes podem escrever.
+  Cada um apaga o próprio recado; responsáveis apagam qualquer um. Nome e parentesco vêm do cadastro (gatilho no banco, SQL 07). Só texto, até 1.000 letras.
+- **Parentesco no cadastro** começa vazio e é obrigatório; convidado (visitante) não vê Mãe/Pai.
+
 ## Problemas que já apareceram (para não voltarem)
 
 - **Fotos sem data:** o seletor de fotos do Android troca o nome do arquivo (ex.: `1000012345.jpg`) e tira a data, e o WhatsApp não guarda EXIF.

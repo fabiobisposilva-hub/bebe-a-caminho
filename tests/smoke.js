@@ -28,7 +28,7 @@ function makeDB(){
       {id:"r2", bebe_id:BABY, tipo:"consulta", data:"2026-10-02", texto:"Consulta privada", dados:{}, foto_path:null, visivel:false, autor:"u-fabio", criado_em:"2026-10-02T10:00:00Z"},
     ],
     albuns: [{id:"a1", familia_id:FB, nome:"Gestação", autor:"u-fabio", criado_em:"2026-10-01T00:00:00Z"}],
-    album_fotos: [], rotina: [], push_subs: [], files: {}, n: 0,
+    album_fotos: [], rotina: [], push_subs: [], recados: [], files: {}, n: 0,
   };
 }
 
@@ -50,6 +50,7 @@ function mockSupabase(db, startUser){
     album_fotos: r=>ve(famAlbum(r.album_id)),
     rotina: r=>resp(famBebe(r.bebe_id)),
     push_subs: r=>r.user_id === user?.id,
+    recados: r=>ve(r.familia_id),
   };
   const write = {
     perfis: r=>r.id === user?.id,
@@ -62,6 +63,7 @@ function mockSupabase(db, startUser){
     album_fotos: r=>resp(famAlbum(r.album_id)),
     rotina: r=>resp(famBebe(r.bebe_id)),
     push_subs: r=>r.user_id === user?.id && resp(r.familia_id),
+    recados: r=>ve(r.familia_id) && (r.autor === user?.id || resp(r.familia_id)),
   };
   function builder(t){
     let op = "select", filters = [], payload = null, single = false;
@@ -1007,6 +1009,44 @@ function run(name, startUser, url, steps, prep){
     assert(a && a.href === LISTA && view("view-tl").includes("Presentinhos para Maria"), "visitante vê a lista");
     assert(w.document.getElementById("openSettings").hidden && !w.document.getElementById("listaUrl"), "visitante não edita");
   }, db=>{ db.familias[0].lista_presentes = LISTA; });
+
+  await run("recados: convidada escreve para a Maria, vê o próprio recado e apaga só o dela", null, null, async ({w, db, view, btn, wait, login, assert})=>{
+    await login("ana@x.com", "segredo2");
+    const tabRc = w.document.getElementById("tab-rc");
+    assert(!tabRc.hidden, "visitante vê a aba Recados");
+    tabRc.click(); await wait(200);
+    assert(view("view-rc").includes("Recados para Maria"), "abre o mural");
+    assert(view("view-rc").includes("Recado do papai") && !view("view-rc").includes("Recado de outra família"), "vê só os recados da própria família");
+    btn("Enviar recado").click(); await wait(50);
+    assert(view("view-rc").includes("Escreva o recado antes"), "não envia vazio");
+    w.document.getElementById("recTxt").value = "Te amo, Maria! Beijos da tia Ana";
+    btn("Enviar recado").click(); await wait(200);
+    const r = db.recados.find(x=>x.texto === "Te amo, Maria! Beijos da tia Ana");
+    assert(r && r.autor === "u-ana" && r.familia_id === FB, "recado gravado em nome da Ana, na família certa");
+    assert(view("view-rc").indexOf("Te amo, Maria!") < view("view-rc").indexOf("Recado do papai"), "o mais novo aparece primeiro");
+    const cards = [...w.document.querySelectorAll("#view-rc .recado")];
+    const dela = cards.find(c=>c.textContent.includes("Te amo")), dele = cards.find(c=>c.textContent.includes("Recado do papai"));
+    assert(dela.textContent.includes("Ana") && [...dela.querySelectorAll("button")].some(b=>b.textContent === "Apagar"), "assinado e com Apagar no dela");
+    assert(![...dele.querySelectorAll("button")].some(b=>b.textContent === "Apagar"), "sem Apagar no recado dos outros");
+    [...dela.querySelectorAll("button")].find(b=>b.textContent === "Apagar").click(); await wait(50);
+    btn("Sim, apagar").click(); await wait(150);
+    assert(!db.recados.some(x=>x.texto.startsWith("Te amo")) && db.recados.some(x=>x.id === "rc1"), "apagou só o dela");
+  }, db=>{
+    db.familias.push({id:"fam-lima", nome:"Família Lima", criado_por:"u-carlos"});
+    db.recados.push({id:"rc1", familia_id:FB, texto:"Recado do papai", nome:"Fabio Bispo", papel:"Pai", autor:"u-fabio", criado_em:"2026-11-20T10:00:00Z"},
+      {id:"rc9", familia_id:"fam-lima", texto:"Recado de outra família", nome:"Carlos Lima", papel:"Pai", autor:"u-carlos", criado_em:"2026-11-21T10:00:00Z"});
+  });
+
+  await run("recados: responsável vê e pode apagar o recado de um convidado (moderação)", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
+    await unlock("segredo1");
+    w.document.getElementById("tab-rc").click(); await wait(200);
+    assert(view("view-rc").includes("Parabéns, Maria!") && view("view-rc").includes("Ana · Tia"), "vê o recado com nome e parentesco");
+    assert(w.document.getElementById("fab").hidden, "sem o botão + Registrar nos recados");
+    const card = [...w.document.querySelectorAll("#view-rc .recado")].find(c=>c.textContent.includes("Parabéns"));
+    [...card.querySelectorAll("button")].find(b=>b.textContent === "Apagar").click(); await wait(50);
+    btn("Sim, apagar").click(); await wait(150);
+    assert(!db.recados.length && view("view-rc").includes("Nenhum recado ainda"), "responsável apagou");
+  }, db=>{ db.recados.push({id:"rc2", familia_id:FB, texto:"Parabéns, Maria!", nome:"Ana Souza", papel:"Tia", autor:"u-ana", criado_em:"2026-11-22T10:00:00Z"}); });
 
   await run("versão sem pré-natal: sem aba, sem atalho, sem agenda da mãe, e os dados antigos ficam guardados", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     assert(htmlPN !== html, "a chave PRENATAL existe no app");

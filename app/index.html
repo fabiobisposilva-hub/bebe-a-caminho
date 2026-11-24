@@ -424,7 +424,8 @@ a.btn{display:block;text-align:center;text-decoration:none}
     <label for="uNasc">Data de nascimento<input id="uNasc" type="date" required></label>
     <label for="uPapel">Parentesco com o bebê<select id="uPapel">
       <option>Mãe</option><option>Pai</option><option>Avó</option><option>Avô</option><option>Tia</option><option>Tio</option>
-      <option>Madrinha</option><option>Padrinho</option><option>Babá / cuidador(a)</option><option>Outro</option></select></label>
+      <option>Bisavó</option><option>Bisavô</option><option>Madrinha</option><option>Padrinho</option><option>Prima</option><option>Primo</option>
+      <option>Amiga</option><option>Amigo</option><option>Babá / cuidador(a)</option><option>Outro</option></select></label>
     <p class="err" id="signErr" hidden></p>
     <div class="row">
       <button class="btn rose" id="signSave" type="submit">Concluir cadastro</button>
@@ -654,7 +655,7 @@ const EXAMPLE = {
 
 let sb = null, authUser = null;
 let mode = "loading"; // loading | example | drive (família) | visit (visitante autorizado)
-let pedidos = [], visitors = [], famId = null, families = [], famMembers = [], inviteNote = "";
+let pedidos = [], visitors = [], famId = null, families = [], famMembers = [], inviteNote = "", invitePapel = "";
 let settings = {id:"b1", nome:"", dpp:"", nasc:"", sexo:"", avatar:""};
 let babies = [settings];
 let entries = [];      /* do bebê escolhido */
@@ -2609,7 +2610,10 @@ function showSignup(){
   const nome = el("input",{autocomplete:"name", placeholder:"Nome e sobrenome"});
   const email = el("input",{type:"email", autocomplete:"email", inputmode:"email", autocapitalize:"off", placeholder:"seu@email.com"});
   const nasc = el("input",{type:"date", max: toISO(new Date())});
-  const papel = el("select",{}, ...["Mãe","Pai","Avó","Avô","Bisavó","Bisavô","Tia","Tio","Madrinha","Padrinho","Prima","Primo","Amiga","Amigo","Babá / cuidador(a)","Outro"].map(x=>el("option",{text:x})));
+  /* parentesco começa sem nada marcado (antes vinha "Mãe" e muita gente deixava assim); convidado (visitante) não vê Mãe nem Pai */
+  const papeis = ["Mãe","Pai","Avó","Avô","Bisavó","Bisavô","Tia","Tio","Madrinha","Padrinho","Prima","Primo","Amiga","Amigo","Babá / cuidador(a)","Outro"].filter(x=>invitePapel !== "visitante" || (x !== "Mãe" && x !== "Pai"));
+  const papel = el("select",{}, el("option",{value:"", text:"Escolha o parentesco…"}), ...papeis.map(x=>el("option",{text:x})));
+  papel.value = "";
   const aceite = el("input",{type:"checkbox", style:"width:22px;height:22px;flex:none"});
   const p1 = pwInput("suPw1","Senha (mínimo 6 caracteres)","new-password");
   const p2 = pwInput("suPw2","Repita a senha","new-password");
@@ -2621,6 +2625,7 @@ function showSignup(){
     if (d.nome.split(" ").length < 2) return bad("Escreva o nome completo (nome e sobrenome).");
     if (!EMAIL_RE.test(d.email)) return bad("Confira o seu e-mail.");
     if (!d.nasc || d.nasc < "1900-01-01" || d.nasc >= toISO(new Date())) return bad("Confira a data de nascimento.");
+    if (!d.papel) return bad("Escolha o seu parentesco com o bebê (avó, tia, amigo…).");
     if (p1.value.length < 6) return bad("A senha precisa ter pelo menos 6 caracteres.");
     if (p1.value !== p2.value) return bad("As duas senhas não são iguais.");
     if (!aceite.checked) return bad("Para criar a conta, leia e aceite a Política de Privacidade.");
@@ -3497,7 +3502,7 @@ async function boot(){
       const c = Array.isArray(r) ? r[0] : r;
       if (!c) { inviteNote = "Esse convite não foi encontrado. Peça um novo à família."; clearInvite(); inviteNote = "Esse convite não foi encontrado. Peça um novo à família."; }
       else if (!c.valido) { clearInvite(); inviteNote = "Esse convite expirou ou já foi usado. Peça um novo à família."; }
-      else inviteNote = c.convidado_por + " te convidou para " + (c.papel === "responsavel" ? "ser responsável pelo diário da " : "acompanhar a ") + c.familia + ". Crie sua conta (ou entre, se já tiver) e aguarde a autorização.";
+      else invitePapel = c.papel, inviteNote = c.convidado_por + " te convidou para " + (c.papel === "responsavel" ? "ser responsável pelo diário da " : "acompanhar a ") + c.familia + ". Crie sua conta (ou entre, se já tiver) e aguarde a autorização.";
     }catch(_){}
   }
   let session = null;
@@ -3547,7 +3552,7 @@ async function afterLogin(fresh, isNew){
   }catch(err){ showOffline(explain(err)); }
 }
 function pendingInvite(){ try{ return localStorage.getItem("pm-convite") || ""; }catch(_){ return ""; } }
-function clearInvite(){ try{ localStorage.removeItem("pm-convite"); }catch(_){} inviteNote = ""; }
+function clearInvite(){ try{ localStorage.removeItem("pm-convite"); }catch(_){} inviteNote = ""; invitePapel = ""; }
 function toExample(msg){
   mode = "example";
   entries = EXAMPLE.entries.map(e=>Object.assign({}, e)); allEntries = entries.slice();

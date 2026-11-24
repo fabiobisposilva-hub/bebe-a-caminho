@@ -968,7 +968,7 @@ function run(name, startUser, url, steps, prep){
   const LISTA = "https://www.amazon.com.br/baby-reg/thas-mendona-janeiro-2027-braslia/2EGA26JYYWJVZ";
   await run("lista de presentes: responsável cola o link em Ajustes e aparece no Diário", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
-    assert(!view("view-tl").includes("Lista de presentinhos"), "sem link, sem cartão");
+    assert(!view("view-tl").includes("Presentinhos para"), "sem link, sem cartão");
     w.document.getElementById("openSettings").click(); await wait(100);
     const inp = w.document.getElementById("listaUrl");
     inp.value = "javascript:alert(1)"; btn("Salvar lista").click(); await wait(100);
@@ -977,13 +977,13 @@ function run(name, startUser, url, steps, prep){
     assert(db.familias[0].lista_presentes === LISTA, "link salvo na família");
     w.document.getElementById("setDlg").close(); await wait(50);
     const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
-    assert(view("view-tl").includes("Lista de presentinhos") && view("view-tl").includes("mimar a Maria") && a && a.href === LISTA && a.target === "_blank" && a.rel.includes("noopener"), "cartão no Diário abrindo a lista em outra janela");
+    assert(view("view-tl").includes("Presentinhos para Maria") && view("view-tl").includes("mimar a Maria") && a && a.href === LISTA && a.target === "_blank" && a.rel.includes("noopener"), "cartão no Diário abrindo a lista em outra janela");
   });
 
   await run("lista de presentes: visitante vê o cartão, sem poder mudar o link", null, null, async ({w, view, wait, login, assert})=>{
     await login("ana@x.com", "segredo2");
     const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
-    assert(a && a.href === LISTA && view("view-tl").includes("Lista de presentinhos"), "visitante vê a lista");
+    assert(a && a.href === LISTA && view("view-tl").includes("Presentinhos para Maria"), "visitante vê a lista");
     assert(w.document.getElementById("openSettings").hidden && !w.document.getElementById("listaUrl"), "visitante não edita");
   }, db=>{ db.familias[0].lista_presentes = LISTA; });
 

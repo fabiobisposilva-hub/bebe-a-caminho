@@ -1047,7 +1047,7 @@ function presentesCard(v){
   if ((mode !== "drive" && mode !== "visit") || !listaOk(u)) return;
   const bebe = first(settings.nome) || "o bebê";
   v.append(el("div",{class:"notice rose"},
-    el("div",{}, el("strong",{text:"🎁 Lista de presentinhos"}),
+    el("div",{}, el("strong",{text:"🎁 Presentinhos para " + (first(settings.nome) || "o bebê")}),
       el("div",{class:"hint", text:"Quer mimar " + (settings.nome ? (settings.sexo === "M" ? "o " : settings.sexo === "F" ? "a " : "") + bebe : bebe) + "? Veja a lista que a família preparou."})),
     el("div",{class:"row"}, el("a",{class:"btn rose", href:u.trim(), target:"_blank", rel:"noopener noreferrer", text:"Ver a lista de presentes"}))));
 }

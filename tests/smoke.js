@@ -221,6 +221,20 @@ function run(name, startUser, url, steps, prep){
     assert(L().textContent.includes("?convite=" + c.codigo), "mostra o link");
   }, null);
 
+  await run("convidado (visitante): parentesco sem Mãe e Pai, e precisa escolher", null, "https://bebe.example/?convite=VISI2345", async ({w, db, L, btn, wait, assert})=>{
+    await wait(150);
+    btn("Criar sua conta").click();
+    const i = L().querySelectorAll("input");
+    i[0].value = "Elza Minari"; i[1].value = "elza@x.com"; i[2].value = "1955-05-05"; i[3].value = "senha123"; i[4].value = "senha123";
+    L().querySelector('input[type=checkbox]').checked = true;
+    const sel = L().querySelector("select");
+    assert(sel.value === "" && ![...sel.options].some(o=>o.value === "Mãe" || o.value === "Pai") && [...sel.options].some(o=>o.value === "Avó"), "sem Mãe/Pai para convidado, começa vazio");
+    btn("Criar conta").click(); await wait(150);
+    assert(!db.perfis.some(p=>p.email === "elza@x.com") && L().textContent.includes("Escolha o seu parentesco"), "não cria sem parentesco");
+    sel.value = "Avó"; btn("Criar conta").click(); await wait(300);
+    assert(db.perfis.find(p=>p.email === "elza@x.com")?.papel === "Avó", "gravou Avó");
+  }, db=>db.convites.push({codigo:"VISI2345", familia_id:FB, papel:"visitante", criado_por:"u-fabio", usos:0, max_usos:50}));
+
   // Thaís (ou qualquer parceiro) abre o link do convite
   await run("pessoa convidada entra pelo link e fica aguardando", null, "https://bebe.example/?convite=ABCD2345", async ({w, db, L, btn, wait, assert})=>{
     await wait(150);
@@ -228,6 +242,13 @@ function run(name, startUser, url, steps, prep){
     btn("Criar sua conta").click();
     const i = L().querySelectorAll("input");
     i[0].value = "Thaís Mendonça"; i[1].value = "thais@x.com"; i[2].value = "1990-03-03"; i[3].value = "senha123"; i[4].value = "senha123";
+    const sel = L().querySelector("select");
+    assert(sel.value === "" && [...sel.options].some(o=>o.value === "Mãe"), "responsável: parentesco começa vazio e tem Mãe");
+    L().querySelector('input[type=checkbox]').checked = true;
+    btn("Criar conta").click(); await wait(150);
+    assert(L().textContent.includes("Escolha o seu parentesco"), "obriga escolher o parentesco");
+    L().querySelector('input[type=checkbox]').checked = false;
+    sel.value = "Mãe";
     btn("Criar conta").click(); await wait(150);
     assert(L().textContent.includes("aceite a Política de Privacidade"), "exige aceite");
     L().querySelector('input[type=checkbox]').checked = true;
@@ -968,7 +989,7 @@ function run(name, startUser, url, steps, prep){
   const LISTA = "https://www.amazon.com.br/baby-reg/thas-mendona-janeiro-2027-braslia/2EGA26JYYWJVZ";
   await run("lista de presentes: responsável cola o link em Ajustes e aparece no Diário", "fabio@x.com", null, async ({w, db, view, btn, wait, unlock, assert})=>{
     await unlock("segredo1");
-    assert(!view("view-tl").includes("Lista de presentinhos"), "sem link, sem cartão");
+    assert(!view("view-tl").includes("Presentinhos para"), "sem link, sem cartão");
     w.document.getElementById("openSettings").click(); await wait(100);
     const inp = w.document.getElementById("listaUrl");
     inp.value = "javascript:alert(1)"; btn("Salvar lista").click(); await wait(100);
@@ -977,13 +998,13 @@ function run(name, startUser, url, steps, prep){
     assert(db.familias[0].lista_presentes === LISTA, "link salvo na família");
     w.document.getElementById("setDlg").close(); await wait(50);
     const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
-    assert(view("view-tl").includes("Lista de presentinhos") && view("view-tl").includes("mimar a Maria") && a && a.href === LISTA && a.target === "_blank" && a.rel.includes("noopener"), "cartão no Diário abrindo a lista em outra janela");
+    assert(view("view-tl").includes("Presentinhos para Maria") && view("view-tl").includes("mimar a Maria") && a && a.href === LISTA && a.target === "_blank" && a.rel.includes("noopener"), "cartão no Diário abrindo a lista em outra janela");
   });
 
   await run("lista de presentes: visitante vê o cartão, sem poder mudar o link", null, null, async ({w, view, wait, login, assert})=>{
     await login("ana@x.com", "segredo2");
     const a = [...w.document.querySelectorAll("#view-tl a")].find(x=>x.textContent === "Ver a lista de presentes");
-    assert(a && a.href === LISTA && view("view-tl").includes("Lista de presentinhos"), "visitante vê a lista");
+    assert(a && a.href === LISTA && view("view-tl").includes("Presentinhos para Maria"), "visitante vê a lista");
     assert(w.document.getElementById("openSettings").hidden && !w.document.getElementById("listaUrl"), "visitante não edita");
   }, db=>{ db.familias[0].lista_presentes = LISTA; });
 
